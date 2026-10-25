@@ -32,6 +32,7 @@ import {
   SafetyCard,
 } from "../features/recovery/RecoveryLibrary";
 import { assessProfile } from "../domain/recovery";
+import {useNativeHost} from "../services/nativeHost";
 const AskPage = lazy(() =>
   import("../features/ask/AskPage").then((module) => ({
     default: module.AskPage,
@@ -157,6 +158,7 @@ export function App() {
       startRoutine(routine);
     },
   });
+  useNativeHost({profile:injury,entries,sessions,routines,safety,modal,onOpen:openExerciseId,onStart:startRoutine,onNavigate:setPage,onCheckIn:()=>setModal("checkin"),onClose:()=>setModal("")});
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (event.data?.type === "OPEN_REMINDERS") setPage("Reminders");

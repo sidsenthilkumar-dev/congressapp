@@ -1,6 +1,6 @@
 # Test Rebound on an iPhone
 
-Rebound now includes an Expo iPhone client in `mobile/`. It uses the existing responsive app inside an origin-restricted WKWebView, with native silent video recording, local iPhone notifications, PDF creation, and the iOS share sheet. It is a hybrid client, not a rewrite of every screen in React Native. It needs a reachable web app; it does not bundle an offline copy of the website.
+Rebound now includes an Expo iPhone client in `mobile/`. It combines native Recovery and Coach screens with focused, origin-restricted WebView screens, native silent video recording, local iPhone notifications, PDF creation, and the iOS share sheet. It needs a reachable web app; it does not bundle an offline copy of the website.
 
 ## Mac + Expo Go
 
@@ -52,3 +52,23 @@ npx expo start --dev-client
 Apple signing, device registration, membership, privacy disclosures, clinical review, and review requirements are separate prerequisites. Expo Go is for development. This change produces a checked iOS JavaScript bundle, not a signed IPA or App Store submission. Xcode, an iOS simulator, and a physical iPhone are unavailable in the cloud workspace used for implementation.
 
 The website also needs a production HTTPS host. Live Clinic and optional AI explanation require the services described in [CLINIC-SETUP.md](CLINIC-SETUP.md).
+
+## Native recovery home and widgets
+
+The iPhone client now opens on a React Native recovery home after a short `rebound.` typing animation. It shows the saved recovery focus, actual logged sessions, the next routine, and a compact weekly view. Coach opens with the routine action and a searchable movement library. Native tabs use short transitions and respect Reduce Motion. The web deployment keeps its existing presentation. Clinic, detailed progress, routine editing, check-ins, and guided sessions still use focused WebView screens connected to the same saved data. The mobile client must connect to a web deployment containing the matching native bridge; an older deployment will not supply the recovery snapshot.
+
+The native exercise catalogue is generated from the web catalogue. After editing exercises run `node scripts/export-mobile-catalog.mjs` from the repository root and commit the generated JSON.
+
+Home Screen and Lock Screen widgets are implemented with WidgetKit. **They cannot run in Expo Go.** Session count sharing is off by default. Enable it under **More → Widgets & connection**, then add Rebound through iOS widget customization. Counts are local to this installation/server, not synchronized across Safari or devices. Disabling sharing or changing servers clears the shared counts. No symptoms, injury details, notes, or videos enter the widget store. iOS controls refresh timing; today’s count resets on the next local calendar day, and total counts reflect the latest app update.
+
+For a native build, configure your own unique `ios.bundleIdentifier` and `ios.appleTeamId` in `mobile/app.json`. The dynamic config derives an App Group `group.<bundleIdentifier>` and the widget bundle ID `<bundleIdentifier>.sessions`. Provision that App Group for both targets in your Apple developer account. The `@bacons/apple-targets` plugin creates the extension during prebuild, and Expo autolinking discovers the local `ReboundWidgets` module. On a Mac with current Xcode (16+) and CocoaPods (1.16.2+), run:
+
+```sh
+cd mobile
+npx expo prebuild --platform ios
+npx expo run:ios --device
+```
+
+Signing and device provisioning are required. Alternatively use the EAS development build profile after configuring your Apple credentials. Generating Xcode files and exporting JavaScript in Linux does not compile or validate Swift on a device.
+
+Physical-device checks: cold-launch the typing animation; repeat with Reduce Motion; verify the recovery counts match a newly logged session; search Coach and start a cleared routine; open/close the full-screen camera without a native toolbar covering it; background the app; add both widget sizes and Lock Screen variants; verify counts after reopening/logging; disable sharing and confirm widgets clear; change servers and confirm old counts disappear; cross midnight and daylight-saving changes; tap a widget to return to Recovery. Confirm existing recorder review, Clinic uploads, reminders, and sharing still work.

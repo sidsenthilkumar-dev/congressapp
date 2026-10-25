@@ -447,11 +447,21 @@ test("native recording is an explicit bridge request and attaching a clip never 
   await expect(
     page.getByRole("heading", { name: "A clearer connection to care." }),
   ).toBeVisible();
-  expect(await page.evaluate(() => (window as any).nativeRequests)).toEqual([]);
+  expect(
+    await page.evaluate(() =>
+      (window as any).nativeRequests.filter(
+        (r: any) => r.type === "RECORD_CLIP",
+      ),
+    ),
+  ).toEqual([]);
   await page.getByRole("button", { name: "Record a private clip" }).click();
-  expect(await page.evaluate(() => (window as any).nativeRequests)).toEqual([
-    { type: "RECORD_CLIP", exerciseId: "knee-extension" },
-  ]);
+  expect(
+    await page.evaluate(() =>
+      (window as any).nativeRequests.filter(
+        (r: any) => r.type === "RECORD_CLIP",
+      ),
+    ),
+  ).toEqual([{ type: "RECORD_CLIP", exerciseId: "knee-extension" }]);
   await page.evaluate(() =>
     window.dispatchEvent(
       new CustomEvent("rebound:native-clip", {
@@ -483,7 +493,9 @@ test("native exports go to the share bridge only after a user selects export", a
   await page
     .getByRole("button", { name: "Export my recovery journal" })
     .click();
-  const requests = await page.evaluate(() => (window as any).nativeRequests);
+  const requests = await page.evaluate(() =>
+    (window as any).nativeRequests.filter((r: any) => r.type === "EXPORT_FILE"),
+  );
   expect(requests).toHaveLength(1);
   expect(requests[0].type).toBe("EXPORT_FILE");
   expect(requests[0].name).toBe("rebound-recovery-journal.json");

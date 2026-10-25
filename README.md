@@ -2,7 +2,7 @@
 
 A responsive recovery companion for athletes and everyday people. Built with React, TypeScript, Vite, and MediaPipe Pose, with an Expo iPhone client in `mobile/`.
 
-For Mac + Expo Go instructions, see [iPhone testing](docs/IPHONE-TESTING.md). The hybrid iPhone client shares the web screens and adds native recording, reminders, PDF creation, and sharing. Camera coaching needs a reachable HTTPS web deployment; none has been deployed yet.
+For Mac + Expo Go instructions, see [iPhone testing](docs/IPHONE-TESTING.md). The iPhone client has native Recovery and Coach screens, a typing launch animation, and focused shared screens for detailed workflows. It adds native recording, reminders, PDF creation, sharing, and an opt-in WidgetKit session counter in native builds. Camera coaching needs a reachable HTTPS web deployment; none has been deployed yet.
 
 ## Run locally
 
@@ -82,7 +82,7 @@ Read [MVP research](docs/MVP-RESEARCH.md) for the verified NHS, MDN, and W3C sou
 
 ## iPhone, Clinic, and tracking expansion
 
-The Expo client uses a restricted WKWebView for the shared app screens, plus native silent recording, local iPhone schedules, PDF export, and share sheets. Run `npm ci` in `mobile/`, then `npx expo start`. A reachable web deployment is required; plain LAN HTTP can preview screens, while camera coaching requires HTTPS. See [iPhone testing](docs/IPHONE-TESTING.md).
+The Expo client opens on a native recovery home and searchable Coach library. A restricted WKWebView connects focused guides, routine editing, Clinic, and progress to the saved app data. It also includes native silent recording, local iPhone schedules, PDF export, share sheets, and an opt-in Home/Lock Screen session widget (native builds only). Run `npm ci` in `mobile/`, then `npx expo start --go` for Expo Go. A reachable web deployment is required; plain LAN HTTP can preview screens, while camera coaching requires HTTPS. See [iPhone testing](docs/IPHONE-TESTING.md).
 
 The default check-in is rule-based and local. Optional AI explanation requires sign-in, explicit opt-in, and a deployed server function with a server-side provider key. It explains a fixed general draft rather than prescribing injury exercises. Live doctor plan delivery and clip uploads require a separately configured Supabase service. See [Clinic setup](docs/CLINIC-SETUP.md).
 
@@ -95,3 +95,5 @@ No real-person tracking accuracy, injury-prevention benefit, physical-iPhone cam
 Supported cyclic camera exercises automatically pause counts and active time after eight seconds without clear joint movement, or three seconds after usable tracking is lost. The preview stays on; exiting/backgrounding stops camera use. Resume is explicit and discards partial rep cycles. Choose an optional rep interval from your existing plan and a break length before starting, or take a break manually. Timed breaks never automatically restart counting. Manual sessions support the same chosen set breaks, while hold-based exercises avoid camera inactivity inference.
 
 Additional pose-based checks identify unexpected elbow/knee bending in supported straight-limb guides and show a correction. These are deterministic checks on the existing pretrained pose model. No new model weights were trained, no clinic footage was reused, and real-person accuracy remains unvalidated. See [form validation and training status](docs/FORM-VALIDATION.md).
+
+See [public video dataset research](docs/VIDEO-DATASET-RESEARCH.md) and the [offline training toolkit](training/README.md) for verified dataset constraints, participant-separated evaluation, and the research-only candidate workflow. No new human-video model is deployed.

@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   View,
+  Switch,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -21,7 +22,56 @@ import { NativeReminders } from "./src/NativeReminders";
 import { validateAppUrl } from "./src/config";
 import { exportWebFile } from "./src/exportFile";
 
+import { PatientShell } from "./src/patient/PatientShell";
+import { LaunchAnimation } from "./src/patient/LaunchAnimation";
+import { parseSnapshot, type RecoverySnapshot } from "./src/patient/snapshot";
+import {
+  nativePresentationScript,
+  nativeActionScript,
+} from "./src/patient/injected";
+import {
+  updateWidget,
+  clearWidget,
+  widgetAvailable,
+} from "./src/patient/widgets";
 function Rebound() {
+  const [launch, setLaunch] = useState(true);
+  const [recoveryRequest, setRecoveryRequest] = useState(0);
+  const [snapshot, setSnapshot] = useState<RecoverySnapshot | null>(null);
+  const [focused, setFocused] = useState(false);
+  const [focusTitle, setFocusTitle] = useState("");
+  const [settings, setSettings] = useState(false);
+  const [widgetEnabled, setWidgetEnabled] = useState(false);
+  useEffect(() => {
+    SecureStore.getItemAsync("rebound-widget-enabled")
+      .then((v) => setWidgetEnabled(v === "true"))
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (widgetEnabled && snapshot)
+      updateWidget(
+        snapshot.stats.total,
+        snapshot.stats.today,
+        snapshot.updatedAt,
+      );
+  }, [snapshot, widgetEnabled]);
+  function action(value: Record<string, unknown>, title?: string) {
+    if (!snapshot) {
+      Alert.alert("Still connecting", "Wait for your recovery data to load.");
+      return;
+    }
+    if (title) {
+      setFocusTitle(title);
+      setFocused(true);
+    }
+    web.current?.injectJavaScript(nativeActionScript(value));
+  }
+  function closeFocus() {
+    web.current?.injectJavaScript(nativeActionScript({ type: "close" }));
+    setFocused(false);
+    setCameraMode(false);
+  }
+
   const [appUrl, setAppUrl] = useState("");
   const [draft, setDraft] = useState(process.env.EXPO_PUBLIC_APP_URL || "");
   const [initializing, setInitializing] = useState(true);
@@ -31,6 +81,25 @@ function Rebound() {
   const [cameraMode, setCameraMode] = useState(false);
   const [foreground, setForeground] = useState(true);
   const web = useRef<WebView<object>>(null);
+  useEffect(() => {
+    if (!appUrl || snapshot || loadError) return;
+    const timeout = setTimeout(
+      () =>
+        setLoadError(
+          "Your recovery data hasn’t connected. Check the address and update the web deployment to the latest Rebound version.",
+        ),
+      15000,
+    );
+    return () => clearTimeout(timeout);
+  }, [appUrl, snapshot, loadError]);
+  useEffect(() => {
+    const interval = setInterval(
+      () => web.current?.injectJavaScript(nativeActionScript({ type: "sync" })),
+      60000,
+    );
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     SecureStore.getItemAsync("rebound-app-origin")
@@ -51,18 +120,30 @@ function Rebound() {
       });
     const appState = AppState.addEventListener("change", (state) => {
       setForeground(state === "active");
+      if (state === "active")
+        web.current?.injectJavaScript(nativeActionScript({ type: "sync" }));
       if (state !== "active")
         web.current?.injectJavaScript(
           "window.dispatchEvent(new Event('rebound:native-background'));true;",
         );
     });
-    const received = Notifications.addNotificationResponseReceivedListener(() =>
-      web.current?.injectJavaScript("window.location.hash='today';true;"),
+    const link = Linking.addEventListener("url", ({ url }) => {
+      if (url.startsWith("rebound://recovery")) {
+        closeFocus();
+        setRecoveryRequest((n) => n + 1);
+      }
+    });
+    const received = Notifications.addNotificationResponseReceivedListener(
+      () => {
+        closeFocus();
+        setRecoveryRequest((n) => n + 1);
+      },
     );
     return () => {
       mounted = false;
       appState.remove();
       received.remove();
+      link.remove();
     };
   }, []);
   async function connect() {
@@ -98,6 +179,15 @@ function Rebound() {
         setRecordExercise(data.exerciseId);
       if (data.type === "CAMERA_MODE" && typeof data.active === "boolean")
         setCameraMode(data.active);
+      if (data.type === "RECOVERY_SNAPSHOT")
+        setSnapshot(parseSnapshot(data.snapshot));
+      if (data.type === "NATIVE_ACTION_RESULT" && data.accepted === false) {
+        setFocused(false);
+        Alert.alert(
+          "Review your plan",
+          data.reason || "This action is unavailable.",
+        );
+      }
       if (data.type === "EXPORT_FILE") await exportWebFile(data);
     } catch (e) {
       Alert.alert(
@@ -115,7 +205,7 @@ function Rebound() {
   return (
     <SafeAreaView style={s.root} edges={cameraMode ? [] : undefined}>
       <StatusBar style={cameraMode ? "light" : "dark"} hidden={cameraMode} />
-      {!cameraMode && (
+      {!cameraMode && !appUrl && (
         <View style={s.top}>
           <Text style={s.brand}>
             rebound<Text style={s.dot}>.</Text>
@@ -152,9 +242,9 @@ function Rebound() {
           <Text style={s.eyebrow}>YOUR IPHONE RECOVERY SPACE</Text>
           <Text style={s.title}>Ready when you are.</Text>
           <Text style={s.detail}>
-            Connect this iPhone client to your Rebound web deployment. The same
-            screens, routines, lessons, and camera coach run inside the app,
-            with native clip recording and local iPhone reminders.
+            Connect this iPhone client to your Rebound web deployment. Your
+            recovery home and movement library are designed for iPhone, with
+            shared routines, guided lessons, and native reminders.
           </Text>
           <Text style={s.label}>Rebound HTTPS address</Text>
           <TextInput
@@ -177,79 +267,99 @@ function Rebound() {
           </Text>
         </View>
       ) : (
-        <View style={s.webContainer}>
-          {appUrl.startsWith("http:") && (
-            <Text style={s.devNote}>
-              Development preview · camera coaching requires HTTPS.
-            </Text>
-          )}
-          {!!loadError ? (
-            <View style={s.center}>
-              <Text style={s.detail}>{loadError}</Text>
-              <Pressable style={s.primary} onPress={() => setLoadError("")}>
-                <Text style={s.primaryText}>Try again</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <WebView<object>
-              ref={web}
-              source={{ uri: appUrl }}
-              style={s.web}
-              javaScriptEnabled
-              domStorageEnabled
-              allowsInlineMediaPlayback
-              mediaPlaybackRequiresUserAction={false}
-              mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
-              sharedCookiesEnabled
-              thirdPartyCookiesEnabled={false}
-              mixedContentMode="never"
-              allowFileAccess={false}
-              startInLoadingState
-              renderLoading={() => (
-                <View style={s.loading}>
-                  <ActivityIndicator color="#476d49" />
-                </View>
-              )}
-              onLoadStart={() => setCameraMode(false)}
-              onError={() =>
-                setLoadError(
-                  "Rebound could not load. Check your connection and server address.",
-                )
-              }
-              onHttpError={(e) => {
-                if (e.nativeEvent.statusCode >= 400)
-                  setLoadError(
-                    `The app server returned ${e.nativeEvent.statusCode}.`,
-                  );
-              }}
-              onShouldStartLoadWithRequest={(request) => {
-                try {
-                  const next = new URL(request.url);
-                  if (next.origin === appUrl) return true;
-                  if (["https:", "http:", "mailto:"].includes(next.protocol))
-                    Linking.openURL(request.url).catch(() => {});
-                  return false;
-                } catch {
-                  return request.url === "about:blank";
-                }
-              }}
-              onMessage={(event) => {
-                void handleBridge(
-                  event.nativeEvent.data,
-                  event.nativeEvent.url,
-                );
-              }}
-            />
-          )}
-          {!foreground && (
-            <View style={s.loading}>
-              <Text style={s.detail}>
-                Camera activity is paused while Rebound is in the background.
+        <PatientShell
+          recoveryRequest={recoveryRequest}
+          snapshot={snapshot}
+          cameraMode={cameraMode}
+          focused={focused || cameraMode || !!loadError}
+          title={focusTitle}
+          onClose={closeFocus}
+          onAction={action}
+          onAlerts={() => setReminders(true)}
+          onSettings={() => setSettings(true)}
+        >
+          <View style={s.webContainer}>
+            {appUrl.startsWith("http:") && (
+              <Text style={s.devNote}>
+                Development preview · camera coaching requires HTTPS.
               </Text>
-            </View>
-          )}
-        </View>
+            )}
+            {!!loadError ? (
+              <View style={s.center}>
+                <Text style={s.detail}>{loadError}</Text>
+                <Pressable style={s.primary} onPress={() => setLoadError("")}>
+                  <Text style={s.primaryText}>Try again</Text>
+                </Pressable>
+                <Pressable style={s.primary} onPress={() => setSettings(true)}>
+                  <Text style={s.primaryText}>Connection settings</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <WebView<object>
+                ref={web}
+                source={{ uri: appUrl }}
+                style={s.web}
+                injectedJavaScript={nativePresentationScript}
+                javaScriptEnabled
+                domStorageEnabled
+                allowsInlineMediaPlayback
+                mediaPlaybackRequiresUserAction={false}
+                mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
+                sharedCookiesEnabled
+                thirdPartyCookiesEnabled={false}
+                mixedContentMode="never"
+                allowFileAccess={false}
+                startInLoadingState
+                renderLoading={() => (
+                  <View style={s.loading}>
+                    <ActivityIndicator color="#476d49" />
+                  </View>
+                )}
+                onLoadStart={() => {
+                  setCameraMode(false);
+                  setSnapshot(null);
+                }}
+                onError={() =>
+                  setLoadError(
+                    "Rebound could not load. Check your connection and server address.",
+                  )
+                }
+                onHttpError={(e) => {
+                  if (e.nativeEvent.statusCode >= 400)
+                    setLoadError(
+                      `The app server returned ${e.nativeEvent.statusCode}.`,
+                    );
+                }}
+                onShouldStartLoadWithRequest={(request) => {
+                  try {
+                    const next = new URL(request.url);
+                    if (next.origin === appUrl) return true;
+                    if (["https:", "http:", "mailto:"].includes(next.protocol))
+                      Linking.openURL(request.url).catch(() => {});
+                    return false;
+                  } catch {
+                    return request.url === "about:blank";
+                  }
+                }}
+                onMessage={(event) => {
+                  void handleBridge(
+                    event.nativeEvent.data,
+                    event.nativeEvent.url,
+                  );
+                }}
+              />
+            )}
+            {!foreground && (
+              <View style={s.loading}>
+                <Text style={s.detail}>
+                  Camera activity is paused while Rebound is in the background.
+                </Text>
+              </View>
+            )}
+          </View>
+        </PatientShell>
       )}
+      {launch && <LaunchAnimation onFinish={() => setLaunch(false)} />}
       <Modal
         visible={!!recordExercise}
         animationType="slide"
@@ -264,6 +374,61 @@ function Rebound() {
               onUse={useClip}
             />
           )}
+        </SafeAreaView>
+      </Modal>
+      <Modal
+        visible={settings}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSettings(false)}
+      >
+        <SafeAreaView style={s.root}>
+          <View style={{ padding: 26 }}>
+            <Pressable onPress={() => setSettings(false)} style={s.primary}>
+              <Text style={s.primaryText}>Done</Text>
+            </Pressable>
+            <Text style={s.title}>Your space.</Text>
+            <Text style={s.detail}>Session widgets</Text>
+            <Text style={s.note}>
+              {widgetAvailable
+                ? "Show today’s and total logged sessions on your Home or Lock Screen. Counts can be visible while your phone is locked. No injury details or clips are shared."
+                : "Widgets require a native iOS development or App Store build. Expo Go cannot load the widget extension."}
+            </Text>
+            <Switch
+              accessibilityLabel="Share session counts with widgets"
+              disabled={!widgetAvailable}
+              value={widgetEnabled}
+              onValueChange={async (enabled) => {
+                setWidgetEnabled(enabled);
+                await SecureStore.setItemAsync(
+                  "rebound-widget-enabled",
+                  String(enabled),
+                );
+                if (!enabled) clearWidget();
+                else if (snapshot)
+                  updateWidget(
+                    snapshot.stats.total,
+                    snapshot.stats.today,
+                    snapshot.updatedAt,
+                  );
+              }}
+            />
+            <Text style={s.note}>
+              After enabling, long-press your Home Screen or customize your Lock
+              Screen and add Rebound. Updates follow iOS scheduling.
+            </Text>
+            <Pressable
+              style={s.primary}
+              onPress={() => {
+                setSettings(false);
+                setSnapshot(null);
+                setAppUrl("");
+                clearWidget();
+              }}
+            >
+              <Text style={s.primaryText}>Change app connection</Text>
+            </Pressable>
+          </View>
         </SafeAreaView>
       </Modal>
       <Modal

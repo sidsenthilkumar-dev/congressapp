@@ -6,3 +6,5 @@ dist/
 .env.local
 ios/
 android/
+!modules/*/ios/
+!modules/*/ios/**

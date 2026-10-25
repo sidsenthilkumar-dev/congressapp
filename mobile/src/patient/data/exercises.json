@@ -1,0 +1,178 @@
+[
+  {
+    "id": "knee-extension",
+    "name": "Seated knee extension",
+    "area": "Knee",
+    "camera": true,
+    "equipment": "Stable chair",
+    "type": "knee"
+  },
+  {
+    "id": "bicep-curl",
+    "name": "Standing bicep curl",
+    "area": "Elbow",
+    "camera": true,
+    "equipment": "Optional clinician-approved light resistance",
+    "type": "curl"
+  },
+  {
+    "id": "shoulder-raise",
+    "name": "Shoulder side raise",
+    "area": "Shoulder",
+    "camera": true,
+    "equipment": "No weights",
+    "type": "shoulder"
+  },
+  {
+    "id": "ankle-pumps",
+    "name": "Ankle pumps",
+    "area": "Ankle",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "ankle"
+  },
+  {
+    "id": "hip-march",
+    "name": "Seated hip march",
+    "area": "Hip",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "hip-march"
+  },
+  {
+    "id": "seated-twist",
+    "name": "Seated upper-body turn",
+    "area": "Back",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "seated-twist"
+  },
+  {
+    "id": "chest-opener",
+    "name": "Seated chest opener",
+    "area": "Shoulder",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "chest-opener"
+  },
+  {
+    "id": "neck-turn",
+    "name": "Gentle neck rotation",
+    "area": "Neck",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "neck-turn"
+  },
+  {
+    "id": "sit-stand",
+    "name": "Supported sit-to-stand",
+    "area": "Knee",
+    "camera": true,
+    "equipment": "Stable chair",
+    "type": "sit-stand"
+  },
+  {
+    "id": "mini-squat",
+    "name": "Supported mini-squat",
+    "area": "Knee",
+    "camera": true,
+    "equipment": "Stable chair",
+    "type": "mini-squat"
+  },
+  {
+    "id": "calf-raise",
+    "name": "Supported calf raise",
+    "area": "Ankle",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "calf-raise"
+  },
+  {
+    "id": "hip-abduction",
+    "name": "Supported sideways leg lift",
+    "area": "Hip",
+    "camera": true,
+    "equipment": "Stable chair",
+    "type": "hip-abduction"
+  },
+  {
+    "id": "hip-extension",
+    "name": "Supported backward leg lift",
+    "area": "Hip",
+    "camera": false,
+    "equipment": "Stable chair",
+    "type": "hip-extension"
+  },
+  {
+    "id": "wall-press",
+    "name": "Wall press-up",
+    "area": "Shoulder",
+    "camera": true,
+    "equipment": "Clear wall and non-slip floor",
+    "type": "wall-press"
+  },
+  {
+    "id": "side-bend",
+    "name": "Standing sideways bend",
+    "area": "Back",
+    "camera": false,
+    "equipment": "Clear space; support nearby if needed",
+    "type": "side-bend"
+  },
+  {
+    "id": "calf-stretch",
+    "name": "Supported calf stretch",
+    "area": "Lower leg",
+    "camera": false,
+    "equipment": "Wall and non-slip floor",
+    "type": "calf-stretch"
+  },
+  {
+    "id": "single-leg",
+    "name": "Supported single-leg balance",
+    "area": "Foot",
+    "camera": false,
+    "equipment": "Wall or stable support",
+    "type": "single-leg"
+  },
+  {
+    "id": "tandem-walk",
+    "name": "Supported heel-to-toe walk",
+    "area": "Foot",
+    "camera": false,
+    "equipment": "Clear path beside a wall",
+    "type": "tandem-walk"
+  },
+  {
+    "id": "band-curl",
+    "name": "Resistance-band curl",
+    "area": "Elbow",
+    "camera": true,
+    "equipment": "An intact resistance band approved by your clinician; secure footwear",
+    "type": "curl"
+  },
+  {
+    "id": "band-row",
+    "name": "Clinician-guided band row",
+    "area": "Shoulder",
+    "camera": false,
+    "equipment": "Intact resistance band and a purpose-built anchor, both checked by your clinician",
+    "type": "band-row"
+  },
+  {
+    "id": "dowel-flexion",
+    "name": "Assisted dowel shoulder lift",
+    "area": "Shoulder",
+    "camera": true,
+    "equipment": "A lightweight smooth dowel approved by your clinician; no weighted bar",
+    "type": "dowel-flexion"
+  },
+  {
+    "id": "seated-hamstring",
+    "name": "Clinician-guided seated hamstring stretch",
+    "area": "Hip",
+    "camera": false,
+    "equipment": "Stable chair and non-slip floor",
+    "type": "hamstring"
+  }
+]
