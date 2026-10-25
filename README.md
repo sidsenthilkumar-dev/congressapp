@@ -89,3 +89,9 @@ The default check-in is rule-based and local. Optional AI explanation requires s
 Run `npm run test:clinic` for six PostgreSQL policy checks, `npm run mobile:typecheck` for native types, and `npm run mobile:bundle` for the iOS JavaScript export. The latter is not a signed native build or a physical-device test. `deno check supabase/functions/recovery-assistant/index.ts` checks the optional server function.
 
 No real-person tracking accuracy, injury-prevention benefit, physical-iPhone camera performance, OS alert display, deployed clinician exchange, or live provider response has been validated. See [tracking coverage](docs/TRACKING-COVERAGE.md).
+
+## Pauses, sets, and form feedback
+
+Supported cyclic camera exercises automatically pause counts and active time after eight seconds without clear joint movement, or three seconds after usable tracking is lost. The preview stays on; exiting/backgrounding stops camera use. Resume is explicit and discards partial rep cycles. Choose an optional rep interval from your existing plan and a break length before starting, or take a break manually. Timed breaks never automatically restart counting. Manual sessions support the same chosen set breaks, while hold-based exercises avoid camera inactivity inference.
+
+Additional pose-based checks identify unexpected elbow/knee bending in supported straight-limb guides and show a correction. These are deterministic checks on the existing pretrained pose model. No new model weights were trained, no clinic footage was reused, and real-person accuracy remains unvalidated. See [form validation and training status](docs/FORM-VALIDATION.md).

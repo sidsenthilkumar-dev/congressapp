@@ -3,7 +3,8 @@ export type Correction =
   | "elbow"
   | "visibility"
   | "position"
-  | "tempo";
+  | "tempo"
+  | "limb";
 export type Landmark = {
   x: number;
   y: number;
@@ -285,13 +286,30 @@ export class MotionTracker {
       type === "wall-press"
         ? jointAngle(shoulder, hip, p[left ? 27 : 28], aspect)
         : 180;
+    const limbAngle = ["shoulder", "flexion"].includes(type)
+      ? jointAngle(
+          p[left ? 11 : 12],
+          p[left ? 13 : 14],
+          p[left ? 15 : 16],
+          aspect,
+        )
+      : type === "hip-abduction"
+        ? jointAngle(
+            p[left ? 23 : 24],
+            p[left ? 25 : 26],
+            p[left ? 27 : 28],
+            aspect,
+          )
+        : 180;
     const correction: Correction | null =
       torsoLean > leanLimit ||
       (type === "wall-press" && (bodyAngle === null || bodyAngle < 150))
         ? "torso"
         : upperArmDrift > 0.65
           ? "elbow"
-          : null;
+          : limbAngle === null || limbAngle < 145
+            ? "limb"
+            : null;
     if (correction) {
       this.stableSince = null;
       this.cycle = "idle";
@@ -302,7 +320,9 @@ export class MotionTracker {
         cue:
           correction === "torso"
             ? "Bring your torso upright. Avoid leaning to complete the movement."
-            : "Keep your elbow closer to your side. Move from the elbow, not your shoulder.",
+            : correction === "elbow"
+              ? "Keep your elbow closer to your side. Move from the elbow, not your shoulder."
+              : "Your working limb appears bent. Pause and review the guide; use manual counting for a clinician-modified movement.",
       };
     }
     if (this.stableSince === null) this.stableSince = now;

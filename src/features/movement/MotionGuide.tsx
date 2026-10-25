@@ -6,6 +6,16 @@ export const correctionText: Record<
   Correction,
   { title: string; detail: string; steps: string[] }
 > = {
+  limb: {
+    title: "Pause and review your limb position.",
+    detail:
+      "The camera estimates an unexpected bend in this movement. Check the illustration and your individual instructions before resuming.",
+    steps: [
+      "Pause and reset without forcing a joint straight.",
+      "Follow your clinician’s prescribed variation and range.",
+      "Use manual counting when your movement differs from the illustration.",
+    ],
+  },
   torso: {
     title: "Stack your shoulders over your hips.",
     detail:

@@ -116,6 +116,7 @@
   line-height: 1.5;
 }
 .camera-hud-actions {
+  flex-wrap: wrap;
   display: flex;
   justify-content: center;
   gap: 12px;

@@ -566,3 +566,35 @@
     display: none;
   }
 }
+.session-target {
+  flex-wrap: wrap;
+}
+.session-target > label {
+  max-width: 100%;
+}
+.session-target > label input,
+.session-target > label select {
+  max-width: 100%;
+  margin: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #cddac2;
+  background: #fbfcf7;
+  color: #294735;
+}
+.session-target > small {
+  flex-basis: 100%;
+  line-height: 1.6;
+  color: #64725c;
+}
+.set-break-panel {
+  margin: 18px 0;
+  padding: 18px;
+  background: #eff5e6;
+  border: 1px solid #ceddbf;
+  border-radius: 15px;
+}
+.set-break-panel p {
+  font-size: 13px;
+  line-height: 1.6;
+}

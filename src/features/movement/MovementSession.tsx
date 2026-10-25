@@ -19,6 +19,7 @@ import { RestTimer } from "./RestTimer";
 import { CorrectionPanel, CorrectionPreview } from "./MotionGuide";
 import { cameraProtocol, trackingCoverage } from "../../domain/coaching";
 import { CameraStage } from "./CameraStage";
+import { SessionPacing, type PaceState } from "../../domain/sessionPacing";
 import {
   MotionTracker,
   type Correction,
@@ -63,6 +64,45 @@ export function MovementSession({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const pacing = useRef(new SessionPacing());
+  const [pace, setPace] = useState<PaceState>(pacing.current.snapshot());
+  const [breakSeconds, setBreakSeconds] = useState(30);
+  const [setSize, setSetSize] = useState("");
+  const breakConfig = useRef({ seconds: 30, reps: 0 });
+  breakConfig.current = { seconds: breakSeconds, reps: Number(setSize) || 0 };
+  const repsInSet = useRef(0);
+  function syncPace(next: PaceState) {
+    setPace((previous) =>
+      previous.mode === next.mode &&
+      previous.remaining === next.remaining &&
+      previous.reason === next.reason
+        ? previous
+        : next,
+    );
+  }
+  function resumeMovement() {
+    tracker.current.reset();
+    syncPace(pacing.current.resume());
+  }
+  function takeBreak() {
+    tracker.current.reset();
+    repsInSet.current = 0;
+    syncPace(
+      pacing.current.rest(performance.now(), breakConfig.current.seconds),
+    );
+  }
+  function countManualRep() {
+    if (pacing.current.snapshot().mode !== "active") return;
+    setReps((n) => n + 1);
+    practiceRef.current = Math.min(2, practiceRef.current + 1);
+    setPracticeReps(practiceRef.current);
+    repsInSet.current++;
+    if (
+      breakConfig.current.reps > 0 &&
+      repsInSet.current >= breakConfig.current.reps
+    )
+      takeBreak();
+  }
   const [target, setTarget] = useState(
     instructions?.reps ? String(instructions.reps) : "",
   );
@@ -110,12 +150,21 @@ export function MovementSession({
     };
   }, []);
   useEffect(() => {
-    if (!running) return;
+    if (!running || pace.mode !== "active") return;
     const timer = setInterval(() => setElapsed((v) => v + 1), 1000);
+    return () => clearInterval(timer);
+  }, [running, pace.mode]);
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(
+      () => syncPace(pacing.current.tick(performance.now())),
+      250,
+    );
     return () => clearInterval(timer);
   }, [running]);
   async function startCamera() {
     if (safetyBlocked || !cleared) return;
+    syncPace(pacing.current.resume());
     const request = ++cameraRequest.current;
     if (protocol) {
       practiceRef.current = 0;
@@ -237,6 +286,7 @@ export function MovementSession({
       sampledAt.current = now;
     }
     const p = result.poseLandmarks;
+    if (pacing.current.snapshot().mode !== "active") tracker.current.reset();
     const resultState = tracker.current.update(
       p,
       protocol.movement as TrackedMovement,
@@ -253,12 +303,25 @@ export function MovementSession({
       resultState.correction = "visibility";
       resultState.cue = "Add more light before continuing. Counting is paused.";
     }
+    const nextPace = pacing.current.observe(
+      resultState.angle,
+      resultState.ready && !resultState.correction,
+      now,
+    );
+    syncPace(nextPace);
+    if (nextPace.mode !== "active") resultState.rep = false;
     setTracking(resultState);
     setStatus(resultState.cue);
     if (resultState.rep) {
       setReps((n) => n + 1);
       practiceRef.current = Math.min(2, practiceRef.current + 1);
       setPracticeReps(practiceRef.current);
+      repsInSet.current++;
+      if (
+        breakConfig.current.reps > 0 &&
+        repsInSet.current >= breakConfig.current.reps
+      )
+        takeBreak();
     }
     if (resultState.correction !== correctionSince.current.issue) {
       correctionSince.current = { issue: resultState.correction, time: now };
@@ -328,6 +391,7 @@ export function MovementSession({
     if (active.current) raf.current = requestAnimationFrame(detect);
   }
   function stop() {
+    syncPace(pacing.current.resume());
     cameraRequest.current++;
     active.current = false;
     cancelAnimationFrame(raf.current);
@@ -571,9 +635,11 @@ export function MovementSession({
                 <div>
                   <strong>{exercise.name}</strong>
                   <small>
-                    {protocol
-                      ? `Slow practice · ${practiceReps} / 2 · Motion estimates`
-                      : "Camera mirror · Manual counting"}
+                    {pace.mode !== "active"
+                      ? "Camera preview on · Counting paused"
+                      : protocol
+                        ? `Slow practice · ${practiceReps} / 2 · Motion estimates`
+                        : "Camera mirror · Manual counting"}
                   </small>
                 </div>
               </div>
@@ -590,11 +656,15 @@ export function MovementSession({
                 <span />
                 {loading
                   ? "Preparing camera"
-                  : !protocol
-                    ? "Camera mirror · Manual count"
-                    : tracking?.ready
-                      ? "Tracking · " + tracking.side + " side"
-                      : "Finding your position"}
+                  : pace.mode !== "active"
+                    ? pace.mode === "rest"
+                      ? "Rest break"
+                      : "Session paused"
+                    : !protocol
+                      ? "Camera mirror · Manual count"
+                      : tracking?.ready
+                        ? "Tracking · " + tracking.side + " side"
+                        : "Finding your position"}
               </span>
               <canvas ref={canvas} />
               {loading && (
@@ -615,17 +685,45 @@ export function MovementSession({
                   </span>
                 </div>
                 <p className="camera-hud-cue" aria-live="polite">
-                  {error ||
-                    (loading
-                      ? "Preparing your camera. You can exit at any time."
-                      : status)}
+                  {pace.mode !== "active"
+                    ? pace.reason
+                    : error ||
+                      (loading
+                        ? "Preparing your camera. You can exit at any time."
+                        : status)}
                 </p>
                 <div className="camera-hud-actions">
+                  {pace.mode !== "active" && (
+                    <button
+                      type="button"
+                      disabled={
+                        pace.mode === "rest" ||
+                        (!!protocol &&
+                          (!tracking?.visible ||
+                            !!tracking?.correction ||
+                            lighting === "Too dim"))
+                      }
+                      onClick={resumeMovement}
+                    >
+                      {pace.mode === "rest"
+                        ? `Break · ${pace.remaining}s`
+                        : "Resume movement"}
+                    </button>
+                  )}
+                  {running && pace.mode === "active" && (
+                    <button type="button" onClick={takeBreak}>
+                      Take a break
+                    </button>
+                  )}
                   <button type="button" onClick={stop}>
                     {loading ? "Cancel camera setup" : "Pause session"}
                   </button>
                   {!protocol && running && (
-                    <button type="button" onClick={() => setReps((n) => n + 1)}>
+                    <button
+                      type="button"
+                      disabled={pace.mode !== "active"}
+                      onClick={countManualRep}
+                    >
                       Count a rep
                     </button>
                   )}
@@ -727,6 +825,48 @@ export function MovementSession({
         </div>
       </div>
       <div className="session-target">
+        <label>
+          Reps between breaks (optional)
+          <input
+            aria-label="Reps between breaks"
+            type="number"
+            min="1"
+            max="200"
+            disabled={running || loading}
+            value={setSize}
+            placeholder="From your plan"
+            onChange={(e) =>
+              setSetSize(
+                e.target.value === ""
+                  ? ""
+                  : String(
+                      Math.max(1, Math.min(200, Number(e.target.value) || 1)),
+                    ),
+              )
+            }
+          />
+        </label>
+        <label>
+          Break length
+          <select
+            aria-label="Set break length"
+            value={breakSeconds}
+            disabled={running || loading}
+            onChange={(e) => setBreakSeconds(Number(e.target.value))}
+          >
+            {[15, 30, 60, 90, 120, 180].map((seconds) => (
+              <option key={seconds} value={seconds}>
+                {seconds} seconds
+              </option>
+            ))}
+          </select>
+        </label>
+        <small>
+          Camera sessions pause after 8 seconds without clear joint movement.
+          Pauses discard partial reps. Set breaks follow your chosen rep
+          interval; timing does not prescribe a dose. Hold-based/manual
+          exercises use the rest timer below.
+        </small>
         <label htmlFor="rep-target">
           My clinician’s rep target <small>(optional)</small>
         </label>
@@ -769,6 +909,35 @@ export function MovementSession({
         />
         I have medical clearance for this movement and will stop if it hurts.
       </label>
+      {mode === "guide" && running && (
+        <section className="set-break-panel" aria-label="Set break">
+          <strong>
+            {pace.mode === "rest"
+              ? `Break · ${pace.remaining}s`
+              : pace.mode === "ready"
+                ? "Break finished"
+                : "Between sets"}
+          </strong>
+          <p>
+            {pace.mode === "active"
+              ? "Take a break whenever you need one."
+              : pace.reason}
+          </p>
+          {pace.mode === "active" ? (
+            <button className="outline" onClick={takeBreak}>
+              Take a set break
+            </button>
+          ) : (
+            <button
+              className="outline"
+              disabled={pace.mode === "rest"}
+              onClick={resumeMovement}
+            >
+              Resume movement
+            </button>
+          )}
+        </section>
+      )}
       <div className="session-actions">
         {loading && (
           <button className="outline" onClick={stop}>
@@ -782,6 +951,7 @@ export function MovementSession({
               disabled={!cleared || loading || safetyBlocked}
               onClick={() => {
                 setMode("guide");
+                syncPace(pacing.current.resume());
                 setRunning(true);
               }}
             >
@@ -825,11 +995,8 @@ export function MovementSession({
             {(mode === "guide" || !protocol) && (
               <button
                 className="outline"
-                onClick={() => {
-                  setReps((n) => n + 1);
-                  practiceRef.current = Math.min(2, practiceRef.current + 1);
-                  setPracticeReps(practiceRef.current);
-                }}
+                disabled={pace.mode !== "active"}
+                onClick={countManualRep}
               >
                 <Plus size={16} />
                 Count a rep
@@ -856,6 +1023,7 @@ export function MovementSession({
           className="undo-rep"
           onClick={() => {
             setReps((n) => Math.max(0, n - 1));
+            repsInSet.current = Math.max(0, repsInSet.current - 1);
             practiceRef.current = Math.min(2, Math.max(0, reps - 1));
             setPracticeReps(practiceRef.current);
           }}
