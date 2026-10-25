@@ -50,6 +50,8 @@ The production TypeScript/Vite build and browser checks cover journal entry, rec
 
 Run `npm test` for the Playwright browser suite. The cloud environment uses system Chromium. On other machines, run `npx playwright install chromium` for standard tests and set `CHROMIUM_PATH` to your installed Chromium path for the synthetic-camera check.
 
+Browser checks use a separate development server on port 5180. Set `REBOUND_TEST_PORT` to use another free port. Normal app development uses Vite's default port 5173.
+
 ## Screenshots and motion recording
 
 With the production preview server running on port 4173, run `node scripts/capture-preview.mjs` to capture the actual UI into ignored `artifacts/`. To include a WebM recording, set `CAPTURE_VIDEO=1` and provide Playwright’s FFmpeg helper (`npx playwright install ffmpeg`, or a configured Playwright browser-tools directory). Screenshots contain a clearly labeled guidance preview, not a fabricated camera finding.
