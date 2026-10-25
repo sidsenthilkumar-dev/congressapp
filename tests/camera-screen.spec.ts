@@ -1,10 +1,11 @@
 import { test, expect, chromium } from "@playwright/test";
 import { testOrigin } from "./test-server";
-for (const viewport of [
-  { width: 390, height: 844 },
-  { width: 1440, height: 900 },
+for (const { viewport, legacy = false } of [
+  { viewport: { width: 390, height: 844 } },
+  { viewport: { width: 1440, height: 900 } },
+  { viewport: { width: 390, height: 844 }, legacy: true },
 ]) {
-  test(`camera fills ${viewport.width}px viewport, exposes its counter, traps focus, and exits cleanly`, async () => {
+  test(`camera fills ${viewport.width}px viewport${legacy ? " with legacy host" : ""}, exposes its counter, traps focus, and exits cleanly`, async () => {
     const browser = await chromium.launch({
       executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
       args: [
@@ -18,7 +19,8 @@ for (const viewport of [
         viewport,
         permissions: ["camera"],
       });
-      await context.addInitScript(() => {
+      await context.addInitScript((legacy) => {
+        if (legacy) window.ReactNativeWebView = { postMessage: () => {} };
         window.Pose = class {
           callback: any;
           setOptions() {}
@@ -36,7 +38,7 @@ for (const viewport of [
             return Promise.resolve();
           }
         } as any;
-      });
+      }, legacy);
       const page = await context.newPage();
       await page.goto(testOrigin);
       await page.getByRole("button", { name: "Let’s get moving" }).click();
@@ -97,6 +99,7 @@ test("Expo host permission gates live camera capture and denial returns to the g
     });
     await context.addInitScript(() => {
       (window as any).__captures = 0;
+      window.ReboundNativeCapabilities = { cameraPermission: true };
       (window as any).__allowCamera = true;
       (window as any).__granted = false;
       (window as any).__native = [];

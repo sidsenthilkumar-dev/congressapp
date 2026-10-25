@@ -1,6 +1,7 @@
 declare global {
   interface Window {
     ReactNativeWebView?: { postMessage: (message: string) => void };
+    ReboundNativeCapabilities?: { cameraPermission?: boolean };
   }
 }
 export function requestNativeRecording(exerciseId: string) {
@@ -12,7 +13,12 @@ export function requestNativeRecording(exerciseId: string) {
 }
 /** Ask Expo Go for its host-app camera permission before WKWebView requests video. */
 export function requestNativeCameraPermission(): Promise<void> {
-  if (!window.ReactNativeWebView) return Promise.resolve();
+  // Older clients rely on WKWebView's own permission prompt; don't wait for an unsupported bridge request.
+  if (
+    !window.ReactNativeWebView ||
+    !window.ReboundNativeCapabilities?.cameraPermission
+  )
+    return Promise.resolve();
   return new Promise((resolve, reject) => {
     const requestId = crypto.randomUUID();
     const cleanup = () => {

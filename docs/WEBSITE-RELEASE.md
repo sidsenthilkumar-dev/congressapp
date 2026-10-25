@@ -48,3 +48,5 @@ Scan the Expo QR code, allow Camera for Expo Go, then enable the camera in a cle
 The default `npm run iphone` also now uses HTTPS via a temporary public static preview. HTTP LAN preview is explicitly `npm run iphone -- --lan-web`; live camera coaching is unavailable there. An HTTPS page whose browser does not expose camera capture gets a specific Expo/iOS/Safari instruction instead of incorrectly claiming that its address is HTTP.
 
 This release publishes the client prototype. Live Clinic/AI services still require their own configured authentication and backend. No App Store release or newly trained human-video model is included.
+
+Updated native clients advertise their camera-permission bridge capability. Older clients fall back to WKWebView’s own camera permission prompt rather than waiting for a bridge response they cannot send. Newer clients still request explicit host permission before capture. Both routes require a secure camera document.
