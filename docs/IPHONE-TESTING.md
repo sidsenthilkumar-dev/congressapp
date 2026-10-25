@@ -2,6 +2,18 @@
 
 Rebound now includes an Expo iPhone client in `mobile/`. It combines native Recovery and Coach screens with focused, origin-restricted WebView screens, native silent video recording, local iPhone notifications, PDF creation, and the iOS share sheet. It needs a reachable web app; it does not bundle an offline copy of the website.
 
+## One Terminal startup
+
+In a current download of the `rebound-mvp` branch, open Terminal in the project’s main folder and run:
+
+```sh
+npm run iphone
+```
+
+The launcher checks Node, installs both sets of locked dependencies, chooses available ports, starts the website and Expo Go together, and supplies the Mac’s private network website address to the iPhone client automatically. Keep the Terminal open and scan the Expo QR code using the iPhone Camera. Both devices must be on the same Wi-Fi. This is a LAN screen preview; camera coaching still requires HTTPS and widgets still need a native build. The launcher does not sign in to Expo or Apple accounts, deploy a site, change saved files, or stop other servers. Ctrl+C stops the servers it started. If an Expo sign-in error appears, sign in to the same Expo account in Expo Go and `npx expo login` from `mobile/`.
+
+`npm run iphone -- --check` runs the environment checks without installing or starting servers. After dependencies are installed, `npm run iphone -- --skip-install` starts both servers without reinstalling. The manual two-Terminal workflow below remains available, including for hosted HTTPS addresses.
+
 ## Mac + Expo Go
 
 Install Node.js LTS (22.13+ or 24.3+ for the native package) and the latest Expo Go on your iPhone. Download the current `rebound-mvp` branch, unzip it, and open two Terminal windows in that folder.

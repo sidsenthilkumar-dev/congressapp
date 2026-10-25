@@ -11,6 +11,7 @@
     "test": "playwright test",
     "test:clinic": "node --test tests/clinic-security.test.mjs",
     "mobile:start": "npm --prefix mobile start",
+    "iphone": "node scripts/start-iphone.mjs",
     "mobile:typecheck": "npm --prefix mobile run typecheck",
     "mobile:bundle": "npm --prefix mobile run export:ios"
   },
