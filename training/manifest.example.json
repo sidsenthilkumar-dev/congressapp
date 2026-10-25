@@ -1,0 +1,21 @@
+{
+  "rights": {
+    "trainingAllowed": false,
+    "reference": "Replace with the actual video-data license or specific training permission record. A code license is insufficient."
+  },
+  "clips": [
+    {
+      "clip_id": "example-segment-001",
+      "participant_id": "dataset-person-001",
+      "exercise_id": "dataset-exercise-name",
+      "view": "side",
+      "family": "upper",
+      "side": "Left",
+      "split": "train",
+      "label": "acceptable",
+      "file": "videos/example.mp4",
+      "start": 0,
+      "end": 3
+    }
+  ]
+}
