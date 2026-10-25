@@ -1,0 +1,12 @@
+.git
+.vercel
+node_modules
+mobile
+presentation
+training
+tests
+tools
+artifacts
+playwright-report
+test-results
+.env*

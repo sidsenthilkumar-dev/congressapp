@@ -103,3 +103,5 @@ For a one-Terminal Expo preview, run `npm run iphone`. It now defaults to a temp
 The [Congressional App Challenge presentation](presentation/README.md) includes an editable Canva-importable PowerPoint, PDF preview, presenter notes, attributed logos, and a demo-video placeholder.
 
 The [website release guide](docs/WEBSITE-RELEASE.md) documents the GitHub Pages publishing branch, activation step, secure hosted Expo mode, and deployment-path camera checks.
+
+For Vercel hosting, use the committed `vercel.json` and [Vercel deployment handoff](docs/VERCEL-DEPLOYMENT.md). Deploy the `rebound-mvp` branch from the repository root. Account authorization is required; a successful local build does not mean the website is live on Vercel.
