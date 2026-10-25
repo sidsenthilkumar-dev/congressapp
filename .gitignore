@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+public/pose/
+.env
+.env.local
+*.log
+test-results/
+playwright-report/
+artifacts/

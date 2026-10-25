@@ -1,0 +1,234 @@
+.visit-summary {
+  margin: 26px 0;
+  border: 1px solid #dce5d2;
+  border-radius: 14px;
+  background: #f8faf4;
+  overflow: hidden;
+}
+.visit-summary-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 25px;
+}
+.visit-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #e6edda;
+  color: #738f59;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.visit-summary-heading h2 {
+  font-size: 21px;
+  margin: 5px 0 7px;
+}
+.visit-summary-heading p {
+  font-size: 12px;
+}
+.visit-summary-heading > button {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.visit-summary-content {
+  border-top: 1px solid #e0e7d7;
+  padding: 25px;
+}
+.visit-period {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 25px;
+  font-size: 12px;
+  color: #6c815c;
+}
+.visit-period select {
+  font: inherit;
+  padding: 9px 13px;
+  border: 1px solid #d3dfc6;
+  background: white;
+  border-radius: 7px;
+  color: #405d31;
+}
+.visit-period > span {
+  margin-left: auto;
+  color: #849573;
+  font-size: 11px;
+}
+.visit-content-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 28px;
+}
+.visit-content-grid h3 {
+  font-size: 15px;
+  color: #425c37;
+}
+.visit-help {
+  font-size: 12px;
+  margin: 9px 0 14px;
+}
+.visit-question-input {
+  display: flex;
+  gap: 8px;
+}
+.visit-question-input input {
+  font: inherit;
+  font-size: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d7e2cd;
+  border-radius: 7px;
+  background: white;
+  color: #405b35;
+}
+.visit-question-input > button {
+  min-width: 44px;
+  min-height: 44px;
+  background: #e2ebd6;
+  color: #597b41;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+.visit-question-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.visit-question-list > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.8;
+  padding: 12px 0;
+  border-bottom: 1px solid #e3e9db;
+  color: #627a52;
+  overflow-wrap: anywhere;
+}
+.visit-question-list > li > svg {
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.visit-question-list > li > span {
+  min-width: 0;
+  flex: 1;
+}
+.visit-question-list button {
+  width: 30px;
+  min-height: 30px;
+  color: #8a9e78;
+  flex-shrink: 0;
+}
+.visit-preview {
+  padding: 25px;
+  background: #edf3e5;
+  border: 1px solid #dee8d2;
+  border-radius: 10px;
+}
+.visit-preview h3 {
+  font-size: 21px;
+  margin: 14px 0 7px;
+}
+.visit-preview p {
+  font-size: 12px;
+}
+.visit-preview ul {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.visit-preview li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #71875f;
+}
+.visit-share-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #e0e7d7;
+  padding-top: 22px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+.visit-share-actions > span {
+  font-size: 11px;
+  color: #7d926a;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin-right: auto;
+}
+.visit-message {
+  font-size: 12px;
+  color: #6f865d;
+  margin-top: 16px;
+}
+@media (max-width: 960px) {
+  .visit-summary-heading {
+    flex-wrap: wrap;
+  }
+  .visit-summary-heading > div {
+    flex: 1;
+  }
+  .visit-summary-heading > button {
+    margin-left: 64px;
+  }
+  .visit-content-grid {
+    grid-template-columns: 1fr;
+  }
+  .visit-share-actions > span {
+    width: 100%;
+    margin-bottom: 7px;
+  }
+}
+@media (max-width: 720px) {
+  .visit-summary-heading {
+    padding: 20px;
+    gap: 12px;
+  }
+  .visit-summary-heading h2 {
+    font-size: 18px;
+  }
+  .visit-summary-heading p {
+    font-size: 11px;
+  }
+  .visit-summary-heading > button {
+    margin-left: 58px;
+  }
+  .visit-summary-content {
+    padding: 20px;
+  }
+  .visit-period {
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+  .visit-period > span {
+    width: 100%;
+    margin-left: 0;
+  }
+  .visit-preview {
+    padding: 20px;
+  }
+  .visit-share-actions > button {
+    flex: 1;
+    font-size: 11px;
+    padding: 12px 9px;
+  }
+  .visit-icon {
+    width: 45px;
+    height: 45px;
+  }
+  .visit-question-list button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
