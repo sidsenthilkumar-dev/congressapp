@@ -8,3 +8,5 @@ public/pose/
 test-results/
 playwright-report/
 artifacts/
+
+.venv-presentation/
