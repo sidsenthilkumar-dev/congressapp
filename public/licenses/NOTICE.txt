@@ -1,0 +1,1 @@
+Rebound includes MediaPipe Pose by Google / the MediaPipe authors (Apache-2.0), React and ReactDOM (MIT), and Manrope and DM Sans from Fontsource (SIL Open Font License). License texts accompany this static distribution. Other bundled dependency notices are retained in the JavaScript distribution. These third-party names do not imply endorsement.

@@ -22,11 +22,23 @@ export function validateAppUrl(value: string, development = false) {
     throw Error(
       "Use your deployed HTTPS app address, without a query, fragment, or credentials. A private LAN HTTP address is allowed only during development.",
     );
-  if (url.pathname !== "/")
+  if (!/^\/(?:[a-zA-Z0-9_-]+\/)*$/.test(url.pathname))
     throw Error(
-      "Host Rebound at the root of its own address, such as https://rebound.example.com.",
+      "Use the full HTTPS app address, with a trailing slash for a hosted project, such as https://example.github.io/congressapp/.",
     );
-  return url.origin;
+  return url.origin + (url.pathname === "/" ? "" : url.pathname);
+}
+export function isAppDocumentUrl(value: string, appUrl: string) {
+  try {
+    const next = new URL(value),
+      app = new URL(appUrl);
+    return (
+      next.origin === app.origin &&
+      (app.pathname === "/" || next.pathname.startsWith(app.pathname))
+    );
+  } catch {
+    return false;
+  }
 }
 export function validReminderSchedule(value: unknown): {
   days: number[];

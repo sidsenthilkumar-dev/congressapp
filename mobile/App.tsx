@@ -20,7 +20,7 @@ import * as Notifications from "expo-notifications";
 import { useCameraPermissions } from "expo-camera";
 import { NativeRecorder } from "./src/NativeRecorder";
 import { NativeReminders } from "./src/NativeReminders";
-import { validateAppUrl } from "./src/config";
+import { validateAppUrl, isAppDocumentUrl } from "./src/config";
 import { exportWebFile } from "./src/exportFile";
 
 import { PatientShell } from "./src/patient/PatientShell";
@@ -171,7 +171,7 @@ function Rebound() {
   }
   async function handleBridge(raw: string, source: string) {
     try {
-      if (new URL(source).origin !== appUrl || raw.length > 1100000) return;
+      if (!isAppDocumentUrl(source, appUrl) || raw.length > 1100000) return;
       const data = JSON.parse(raw);
       if (
         data.type === "REQUEST_CAMERA_PERMISSION" &&
@@ -347,7 +347,7 @@ function Rebound() {
                 onShouldStartLoadWithRequest={(request) => {
                   try {
                     const next = new URL(request.url);
-                    if (next.origin === appUrl) return true;
+                    if (isAppDocumentUrl(request.url, appUrl)) return true;
                     if (["https:", "http:", "mailto:"].includes(next.protocol))
                       Linking.openURL(request.url).catch(() => {});
                     return false;

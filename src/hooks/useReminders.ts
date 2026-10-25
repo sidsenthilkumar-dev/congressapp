@@ -1,3 +1,4 @@
+import { appAsset } from "../services/appAsset";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Routine, Session } from "../domain/types";
 import { downloadFile } from "../domain/visitReport";
@@ -50,7 +51,7 @@ function capability() {
 async function activeWorker() {
   if (!("serviceWorker" in navigator)) return null;
   const registration = await navigator.serviceWorker.register(
-    "/notification-worker.js",
+    appAsset("notification-worker.js"),
     { updateViaCache: "none" },
   );
   if (registration.active) return registration;
@@ -158,14 +159,14 @@ export function useReminders(options: Options) {
         if (registration) {
           await registration.showNotification(copy.title, {
             body: copy.body,
-            icon: "/icons/rebound-192.png",
+            icon: appAsset("icons/rebound-192.png"),
             tag: "rebound-" + item.id,
             data: { route: "reminders" },
           });
         } else {
           const notification = new Notification(copy.title, {
             body: copy.body,
-            icon: "/icons/rebound-192.png",
+            icon: appAsset("icons/rebound-192.png"),
             tag: "rebound-" + item.id,
           });
           notification.onclick = () => {
@@ -375,7 +376,7 @@ export function useReminders(options: Options) {
       if (registration)
         await registration.showNotification(copy.title, {
           body: copy.body,
-          icon: "/icons/rebound-192.png",
+          icon: appAsset("icons/rebound-192.png"),
           tag: "rebound-test",
           data: { route: "reminders" },
         });

@@ -20,6 +20,7 @@ import { CorrectionPanel, CorrectionPreview } from "./MotionGuide";
 import { cameraProtocol, trackingCoverage } from "../../domain/coaching";
 import { CameraStage } from "./CameraStage";
 import { requestNativeCameraPermission } from "../../services/nativeBridge";
+import { appAsset } from "../../services/appAsset";
 import { SessionPacing, type PaceState } from "../../domain/sessionPacing";
 import {
   MotionTracker,
@@ -183,7 +184,7 @@ export function MovementSession({
     setLoading(true);
     setMode("camera");
     try {
-      if (!navigator.mediaDevices?.getUserMedia)
+      if (!window.isSecureContext)
         throw Error(
           window.ReactNativeWebView
             ? "This phone is using an HTTP preview. Restart from your Mac with npm run iphone -- --https, or connect Rebound to a hosted HTTPS address, to enable camera coaching."
@@ -191,6 +192,10 @@ export function MovementSession({
         );
       await requestNativeCameraPermission();
       if (!mounted.current || request !== cameraRequest.current) return;
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw Error(
+          "This browser does not expose camera capture. Update Expo Go and iOS, or open this HTTPS app address in Safari and allow Camera access.",
+        );
       stream.current = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: { ideal: facing } },
         audio: false,
@@ -218,7 +223,7 @@ export function MovementSession({
       if (!window.Pose) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
-          script.src = "/pose/pose.js";
+          script.src = appAsset("pose/pose.js");
           script.onload = () => resolve();
           script.onerror = () =>
             reject(Error("Could not load the local pose runtime."));
@@ -227,7 +232,7 @@ export function MovementSession({
       }
       if (!mounted.current || request !== cameraRequest.current) return;
       const model = new window.Pose({
-        locateFile: (file: string) => "/pose/" + file,
+        locateFile: (file: string) => appAsset("pose/" + file),
       });
       landmarker.current = model;
       model.setOptions({

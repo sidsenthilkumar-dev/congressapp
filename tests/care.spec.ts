@@ -13,6 +13,7 @@ import {
   validateAppUrl,
   validReminderSchedule,
   nativeClipFormat,
+  isAppDocumentUrl,
 } from "../mobile/src/config";
 import { parsePlan } from "../src/domain/clinic";
 test("camera setup can be canceled while the pose model is still loading", async () => {
@@ -119,6 +120,22 @@ test("native client rejects unsafe app origins and malformed notification schedu
   );
   expect(validateAppUrl("http://192.168.1.10:5173", true)).toBe(
     "http://192.168.1.10:5173",
+  );
+  const project = "https://sidsenthilkumar-dev.github.io/congressapp/";
+  expect(validateAppUrl(project)).toBe(project);
+  expect(isAppDocumentUrl(project + "#coach", project)).toBe(true);
+  expect(isAppDocumentUrl(project + "index.html", project)).toBe(true);
+  expect(
+    isAppDocumentUrl("https://sidsenthilkumar-dev.github.io/other/", project),
+  ).toBe(false);
+  expect(
+    isAppDocumentUrl(
+      "https://sidsenthilkumar-dev.github.io/congressapp-evil/",
+      project,
+    ),
+  ).toBe(false);
+  expect(isAppDocumentUrl("https://other.example/congressapp/", project)).toBe(
+    false,
   );
   for (const url of [
     "javascript:alert(1)",

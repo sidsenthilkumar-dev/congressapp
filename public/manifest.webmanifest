@@ -1,22 +1,22 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Rebound \u2014 Your recovery, in motion",
   "short_name": "Rebound",
   "description": "A personal recovery journal and on-device movement companion.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f6f7f2",
   "theme_color": "#344b35",
   "icons": [
     {
-      "src": "/icons/rebound-192.png",
+      "src": "icons/rebound-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/rebound-512.png",
+      "src": "icons/rebound-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

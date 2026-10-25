@@ -11,13 +11,16 @@ self.addEventListener("notificationclick", (event) => {
         type: "window",
         includeUncontrolled: true,
       });
-      const client = windows.find(
-        (c) => new URL(c.url).origin === self.location.origin,
+      const client = windows.find((c) =>
+        c.url.startsWith(self.registration.scope),
       );
       if (client) {
         await client.focus();
         client.postMessage({ type: "OPEN_REMINDERS" });
-      } else await self.clients.openWindow("/#reminders");
+      } else
+        await self.clients.openWindow(
+          new URL("./#reminders", self.registration.scope).href,
+        );
     })(),
   );
 });

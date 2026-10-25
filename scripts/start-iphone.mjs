@@ -3,9 +3,41 @@ import { existsSync } from "node:fs";
 import { createServer } from "node:net";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
+import { iphoneTarget } from "./iphone-options.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const mobile = fileURLToPath(new URL("../mobile/", import.meta.url));
+
+function startExpo(website, address, port) {
+  const child = spawn(
+    process.execPath,
+    [
+      fileURLToPath(
+        new URL("../mobile/node_modules/expo/bin/cli", import.meta.url),
+      ),
+      "start",
+      "--go",
+      "--lan",
+      "--clear",
+      "--port",
+      String(port),
+    ],
+    {
+      cwd: mobile,
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        EXPO_PUBLIC_APP_URL: website,
+        REACT_NATIVE_PACKAGER_HOSTNAME: address,
+      },
+    },
+  );
+  const completion = new Promise((resolve, reject) => {
+    child.on("error", reject);
+    child.on("exit", resolve);
+  });
+  return { child, completion };
+}
 
 function runNpm(cwd, args = ["ci"]) {
   return new Promise((resolve, reject) => {
@@ -71,11 +103,44 @@ async function main() {
       "This download is missing mobile/. Download the latest rebound-mvp branch into a new folder.",
     );
   const address = lanAddress();
-  const secure = process.argv.includes("--https");
+  // HTTP previews cannot use the iPhone's WebView camera. Keep them explicitly opt-in.
+  const target = iphoneTarget(process.argv);
+  const secure = target.mode === "https";
   if (process.argv.includes("--check")) {
     console.log(
-      `iPhone launcher ready. Project: ${root}\nPrivate network: ${address}\nHTTPS camera preview: ${secure ? "enabled (temporary public static preview)" : "off"}\nBoth package lockfiles found: ${existsSync(new URL("../package-lock.json", import.meta.url))}`,
+      `iPhone launcher ready. Project: ${root}\nPrivate network: ${address}\nWebsite mode: ${target.mode}${target.url ? " · " + target.url : ""}\nBoth package lockfiles found: ${existsSync(new URL("../package-lock.json", import.meta.url))}`,
     );
+    return;
+  }
+  if (target.mode === "hosted") {
+    if (!process.argv.includes("--skip-install")) await runNpm(mobile);
+    const response = await fetch(target.url, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok)
+      throw Error(
+        `The hosted website returned ${response.status}. Activate its hosting before starting the iPhone client.`,
+      );
+    console.log(
+      `Using the hosted HTTPS website: ${target.url}\nScan the Expo QR code. No local website server or temporary tunnel is needed.`,
+    );
+    const { child, completion } = startExpo(
+      target.url,
+      address,
+      await freePort(8081),
+    );
+    const stop = () => child.kill("SIGINT");
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+    try {
+      const code = await completion;
+      if (code !== 0 && code !== null)
+        throw Error("Expo stopped. Check the error above.");
+    } finally {
+      process.removeListener("SIGINT", stop);
+      process.removeListener("SIGTERM", stop);
+      child.kill("SIGTERM");
+    }
     return;
   }
   if (!process.argv.includes("--skip-install")) {
@@ -200,31 +265,9 @@ async function main() {
     console.log(
       `\nWebsite ready: ${website}\nScan the Expo QR code below with your iPhone Camera.\nThe iPhone app will use this website address automatically.\nKeep this Terminal open. Press Ctrl+C to stop both servers.\n${secure ? "HTTPS is ready for camera permission and on-device coaching." : "For live camera coaching, restart with npm run iphone -- --https."}\n`,
     );
-    const code = await new Promise((resolve, reject) => {
-      expo = spawn(
-        process.execPath,
-        [
-          expoEntry,
-          "start",
-          "--go",
-          "--lan",
-          "--clear",
-          "--port",
-          String(expoPort),
-        ],
-        {
-          cwd: mobile,
-          stdio: "inherit",
-          env: {
-            ...process.env,
-            EXPO_PUBLIC_APP_URL: website,
-            REACT_NATIVE_PACKAGER_HOSTNAME: address,
-          },
-        },
-      );
-      expo.on("error", reject);
-      expo.on("exit", resolve);
-    });
+    const started = startExpo(website, address, expoPort);
+    expo = started.child;
+    const code = await started.completion;
     if (!stopping && webFailure) throw webFailure;
     if (!stopping && code !== 0)
       throw new Error(

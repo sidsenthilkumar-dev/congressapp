@@ -231,7 +231,11 @@ export function ClinicPage({
                 action(async () => {
                   const { error } = await clinic!.auth.signInWithOtp({
                     email,
-                    options: { emailRedirectTo: location.origin + "/#clinic" },
+                    options: {
+                      emailRedirectTo:
+                        new URL(import.meta.env.BASE_URL, location.origin)
+                          .href + "#clinic",
+                    },
                   });
                   if (error) throw error;
                   setCodeRequested(true);

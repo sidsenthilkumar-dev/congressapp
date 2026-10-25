@@ -10,7 +10,7 @@ In a current download of the `rebound-mvp` branch, open Terminal in the project�
 npm run iphone
 ```
 
-The launcher checks Node, installs both sets of locked dependencies, chooses available ports, starts the website and Expo Go together, and supplies the Mac’s private network website address to the iPhone client automatically. Keep the Terminal open and scan the Expo QR code using the iPhone Camera. Both devices must be on the same Wi-Fi. This is a LAN screen preview; camera coaching still requires HTTPS and widgets still need a native build. The launcher does not sign in to Expo or Apple accounts, deploy a site, change saved files, or stop other servers. Ctrl+C stops the servers it started. If an Expo sign-in error appears, sign in to the same Expo account in Expo Go and `npx expo login` from `mobile/`.
+The launcher checks Node, installs dependencies, chooses available ports, starts a temporary public HTTPS static preview and Expo Go together, and supplies the secure website address automatically. HTTP screen previews now require the explicit `--lan-web` flag. Keep the Terminal open and scan the Expo QR code using the iPhone Camera. Both devices must be on the same Wi-Fi. The default preview uses HTTPS for camera access. Widgets still need a native build. The launcher does not sign in to Expo or Apple accounts, deploy a site, change saved files, or stop other servers. Ctrl+C stops the servers it started. If an Expo sign-in error appears, sign in to the same Expo account in Expo Go and `npx expo login` from `mobile/`.
 
 `npm run iphone -- --check` runs the environment checks without installing or starting servers. After dependencies are installed, `npm run iphone -- --skip-install` starts both servers without reinstalling. The manual two-Terminal workflow below remains available, including for hosted HTTPS addresses.
 
@@ -104,3 +104,16 @@ The simulator/cloud browser cannot validate iPhone WKWebView permissions, GPU sp
 ## Weekly goal
 
 A compact native progress bar above the recovery-focus card shows **completed scheduled routines / planned routines** for the current local Monday–Sunday week. Set the goal by choosing routine days in **Plan my week**. A routine earns credit once per scheduled date, only after its final saved movement completes the run; independent movement sessions, duplicate finishes, future-dated sessions, and unscheduled extra sets do not add credit. Dates before the routine was created are excluded. Unscheduled routines do not silently become a seven-day target. The current schedule determines the goal, so editing/deleting a routine can change the denominator. The bar is a plan-consistency measure, not a healing score. Rest days and safety holds have explicit messages, and a reminder shortcut opens the existing native opt-in scheduler. Routine days are suggested when creating a new native reminder schedule; an existing saved schedule takes precedence. Users still choose and confirm their desired notification days/time.
+
+
+## Use a published website with Expo Go
+
+After the HTTPS site is activated, use the latest mobile code and run this in the project root:
+
+```sh
+REBOUND_APP_URL=https://sidsenthilkumar-dev.github.io/congressapp/ npm run iphone
+```
+
+The hosted mode starts Expo Go only and sets its WebView address to the published website. It does not start a local website or temporary tunnel, and it refuses an HTTP address. The trailing slash on `/congressapp/` matters. Native messages/navigation are restricted to that origin and application path. A 404 means hosting still needs activation, not that camera permission needs changing. See [website release](WEBSITE-RELEASE.md).
+
+The default `npm run iphone` now uses a temporary HTTPS preview rather than the old HTTP LAN address; `--https` remains a supported explicit spelling. `npm run iphone -- --lan-web` is an opt-in screen preview with camera coaching unavailable. Update the downloaded code before using these commands; old ZIP folders do not update themselves. Metro’s `exp://…:8081` address opens the Expo client, while the app’s camera document must come from HTTPS. Do not use your `http://192.168…:5173` website address for live coaching.
