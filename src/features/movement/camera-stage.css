@@ -1,0 +1,210 @@
+.camera-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0a140f;
+  color: white;
+  height: 100dvh;
+  overflow: hidden;
+}
+.camera-stage .coach-view.enhanced-view {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #0a140f;
+}
+.camera-stage .coach-view video,
+.camera-stage .coach-view canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.camera-stage .camera-frame {
+  inset: 20% 8% 29%;
+  pointer-events: none;
+}
+.camera-stage .tracking-badge {
+  bottom: auto;
+  transform: none;
+  width: max-content;
+  height: auto;
+  font-size: 12px;
+  top: calc(87px + env(safe-area-inset-top, 0px));
+  left: 20px;
+  max-width: calc(100% - 40px);
+  color: #fff;
+  background: #183425d9;
+}
+.camera-hud-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 28px;
+  background: linear-gradient(#07110fe6, transparent);
+}
+.camera-hud-header button {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #ffffff45;
+  background: #ffffff15;
+  color: white;
+  border-radius: 50%;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.camera-hud-header div {
+  min-width: 0;
+}
+.camera-hud-header strong {
+  display: block;
+  font-size: 16px;
+  color: white;
+}
+.camera-hud-header small {
+  display: block;
+  font-size: 11px;
+  color: #c5d7c3;
+  margin-top: 5px;
+}
+.camera-hud-footer {
+  position: absolute;
+  z-index: 8;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 32px 24px calc(22px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(transparent, #07110ff2 30%);
+  text-align: center;
+}
+.camera-hud-count {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 18px;
+}
+.camera-hud-count > strong {
+  color: #e1f4c5;
+  font-size: 88px;
+  font-weight: 700;
+  letter-spacing: -4px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.camera-hud-count > span {
+  color: #d6e4d1;
+  font-size: 11px;
+  text-align: left;
+  line-height: 1.7;
+}
+.camera-hud-cue {
+  min-height: 40px;
+  max-width: 500px;
+  margin: 16px auto;
+  color: #e2ebdd;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.camera-hud-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.camera-hud-actions button {
+  min-height: 48px;
+  border: 1px solid #cfe4bc70;
+  border-radius: 24px;
+  padding: 12px 24px;
+  background: #e4f1ce;
+  color: #213c2a;
+  font-weight: 600;
+  font-size: 14px;
+}
+.camera-stage .camera-correction {
+  inset: auto 16px 265px;
+  max-width: 620px;
+  margin: auto;
+  padding: 14px;
+  max-height: 42dvh;
+  overflow: auto;
+  animation: camera-correction-in 180ms ease-out;
+}
+.camera-stage .camera-correction .correction-top h3 {
+  font-size: 18px;
+}
+.camera-stage .camera-correction .correction-content {
+  grid-template-columns: 140px minmax(0, 1fr);
+}
+.camera-stage .camera-correction .correction-content svg {
+  max-height: 140px;
+}
+.camera-stage .camera-correction .correction-content > .motion-scene,
+.camera-stage .camera-correction .correction-content > .exercise-demo,
+.camera-stage .camera-correction .correction-content > .equipment-demo {
+  height: 140px;
+}
+.camera-stage .camera-correction .correction-content p {
+  font-size: 13px;
+  color: #42533c;
+}
+.camera-stage .camera-loading {
+  color: white;
+  background: #0b1919cc;
+}
+@keyframes camera-correction-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 440px) {
+  .camera-stage .camera-correction {
+    bottom: 245px;
+    padding: 8px;
+  }
+  .camera-stage .camera-correction .correction-content {
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .camera-stage .camera-correction .correction-top h3 {
+    font-size: 15px;
+  }
+  .camera-hud-count > strong {
+    font-size: 76px;
+  }
+}
+@media (max-height: 520px) {
+  .camera-hud-footer {
+    left: auto;
+    width: 230px;
+    padding: 14px;
+  }
+  .camera-stage .camera-correction {
+    left: 16px;
+    right: 260px;
+    bottom: 18px;
+    max-height: 65dvh;
+  }
+  .camera-hud-count > strong {
+    font-size: 54px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camera-stage .camera-correction {
+    animation: none;
+  }
+}

@@ -223,7 +223,10 @@ test("sustained live misalignment opens an animated correction and does not coun
     ],
   });
   try {
-    const context = await b.newContext({ permissions: ["camera"] });
+    const context = await b.newContext({
+      permissions: ["camera"],
+      viewport: { width: 390, height: 844 },
+    });
     const p = points("knee", 90);
     p[11].x = 0.3;
     p[12].x = 0.32;
@@ -264,10 +267,18 @@ test("sustained live misalignment opens an animated correction and does not coun
       "00",
     );
     await expect(page.locator(".correcting-torso")).toBeVisible();
+    const camera = page.getByRole("dialog", {
+      name: "Full-screen movement camera",
+    });
+    await expect(
+      camera.getByLabel("Movement correction", { exact: true }),
+    ).toBeVisible();
+    await camera.screenshot({ path: "artifacts/camera-correction-phone.png" });
     await page.getByRole("button", { name: "Dismiss correction" }).click();
     await expect(
       page.getByLabel("Movement correction", { exact: true }),
     ).toHaveCount(0);
+    await page.getByRole("button", { name: "Exit full-screen camera" }).click();
     await page.getByRole("button", { name: "Close dialog" }).click();
   } finally {
     await b.close();

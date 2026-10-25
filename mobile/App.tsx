@@ -28,6 +28,7 @@ function Rebound() {
   const [loadError, setLoadError] = useState("");
   const [recordExercise, setRecordExercise] = useState("");
   const [reminders, setReminders] = useState(false);
+  const [cameraMode, setCameraMode] = useState(false);
   const [foreground, setForeground] = useState(true);
   const web = useRef<WebView<object>>(null);
   useEffect(() => {
@@ -95,6 +96,8 @@ function Rebound() {
         /^[a-z0-9-]{1,64}$/.test(data.exerciseId)
       )
         setRecordExercise(data.exerciseId);
+      if (data.type === "CAMERA_MODE" && typeof data.active === "boolean")
+        setCameraMode(data.active);
       if (data.type === "EXPORT_FILE") await exportWebFile(data);
     } catch (e) {
       Alert.alert(
@@ -110,38 +113,40 @@ function Rebound() {
       </View>
     );
   return (
-    <SafeAreaView style={s.root}>
-      <StatusBar style="dark" />
-      <View style={s.top}>
-        <Text style={s.brand}>
-          rebound<Text style={s.dot}>.</Text>
-        </Text>
-        {!!appUrl && (
-          <View style={s.topActions}>
-            <Pressable
-              accessibilityLabel="iPhone reminder settings"
-              onPress={() => setReminders(true)}
-            >
-              <Text style={s.topButton}>Alerts</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel="Change app server"
-              onPress={() =>
-                Alert.alert(
-                  "Change app server?",
-                  "Your journal and clinic sign-in belong to the current server. A different address has separate data.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Change", onPress: () => setAppUrl("") },
-                  ],
-                )
-              }
-            >
-              <Text style={s.topButton}>Server</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
+    <SafeAreaView style={s.root} edges={cameraMode ? [] : undefined}>
+      <StatusBar style={cameraMode ? "light" : "dark"} hidden={cameraMode} />
+      {!cameraMode && (
+        <View style={s.top}>
+          <Text style={s.brand}>
+            rebound<Text style={s.dot}>.</Text>
+          </Text>
+          {!!appUrl && (
+            <View style={s.topActions}>
+              <Pressable
+                accessibilityLabel="iPhone reminder settings"
+                onPress={() => setReminders(true)}
+              >
+                <Text style={s.topButton}>Alerts</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Change app server"
+                onPress={() =>
+                  Alert.alert(
+                    "Change app server?",
+                    "Your journal and clinic sign-in belong to the current server. A different address has separate data.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Change", onPress: () => setAppUrl("") },
+                    ],
+                  )
+                }
+              >
+                <Text style={s.topButton}>Server</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      )}
       {!appUrl ? (
         <View style={s.setup}>
           <Text style={s.eyebrow}>YOUR IPHONE RECOVERY SPACE</Text>
@@ -205,6 +210,7 @@ function Rebound() {
                   <ActivityIndicator color="#476d49" />
                 </View>
               )}
+              onLoadStart={() => setCameraMode(false)}
               onError={() =>
                 setLoadError(
                   "Rebound could not load. Check your connection and server address.",

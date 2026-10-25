@@ -18,6 +18,7 @@ import { ExerciseDemo } from "../../components/ExerciseDemo";
 import { RestTimer } from "./RestTimer";
 import { CorrectionPanel, CorrectionPreview } from "./MotionGuide";
 import { cameraProtocol, trackingCoverage } from "../../domain/coaching";
+import { CameraStage } from "./CameraStage";
 import {
   MotionTracker,
   type Correction,
@@ -198,8 +199,7 @@ export function MovementSession({
           ? e.message
           : "Camera could not start. Check permission and try again.",
       );
-      stream.current?.getTracks().forEach((t) => t.stop());
-      setRunning(false);
+      stop();
     } finally {
       if (mounted.current && request === cameraRequest.current)
         setLoading(false);
@@ -550,70 +550,122 @@ export function MovementSession({
           )}
         </section>
       }
-      <div
-        className={
-          "coach-view enhanced-view " +
-          (facing === "environment" ? "rear-camera" : "")
-        }
-      >
-        {mode === "camera" ? (
-          <>
-            <video ref={video} playsInline muted />
-            <div className="camera-frame" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-            <span
-              className={"tracking-badge " + (tracking?.ready ? "ready" : "")}
-            >
-              <span />
-              {loading
-                ? "Preparing camera"
-                : !protocol
-                  ? "Camera mirror · Manual count"
-                  : tracking?.ready
-                    ? "Tracking · " + tracking.side + " side"
-                    : "Finding your position"}
-            </span>
-            <canvas ref={canvas} />
-            {loading && (
-              <div className="camera-loading">
-                Preparing your camera & pose model…
+      <CameraStage active={mode === "camera"}>
+        <div
+          className={
+            "coach-view enhanced-view " +
+            (facing === "environment" ? "rear-camera" : "")
+          }
+        >
+          {mode === "camera" ? (
+            <>
+              <div className="camera-hud-header">
+                <button
+                  type="button"
+                  data-exit-camera
+                  aria-label="Exit full-screen camera"
+                  onClick={stop}
+                >
+                  ×
+                </button>
+                <div>
+                  <strong>{exercise.name}</strong>
+                  <small>
+                    {protocol
+                      ? `Slow practice · ${practiceReps} / 2 · Motion estimates`
+                      : "Camera mirror · Manual counting"}
+                  </small>
+                </div>
               </div>
-            )}
-            {correction && dismissed !== correction && running && (
-              <div
-                className="camera-correction"
-                data-testid="camera-correction"
+              <video ref={video} playsInline muted />
+              <div className="camera-frame" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+              <span
+                className={"tracking-badge " + (tracking?.ready ? "ready" : "")}
               >
-                <CorrectionPanel
-                  kind={exercise.type}
-                  correction={correction}
-                  illustration={
-                    ![
-                      "knee-extension",
-                      "bicep-curl",
-                      "shoulder-raise",
-                    ].includes(exercise.id) ? (
-                      <ExerciseDemo exercise={exercise} paused={staticGuide} />
-                    ) : undefined
-                  }
-                  onClose={() => setDismissed(correction)}
-                />
+                <span />
+                {loading
+                  ? "Preparing camera"
+                  : !protocol
+                    ? "Camera mirror · Manual count"
+                    : tracking?.ready
+                      ? "Tracking · " + tracking.side + " side"
+                      : "Finding your position"}
+              </span>
+              <canvas ref={canvas} />
+              {loading && (
+                <div className="camera-loading">
+                  Preparing your camera & pose model…
+                </div>
+              )}
+              <div className="camera-hud-footer">
+                <div className="camera-hud-count">
+                  <strong aria-label="Camera rep count">
+                    {String(reps).padStart(2, "0")}
+                  </strong>
+                  <span>
+                    REPS LOGGED
+                    <br />
+                    {Math.floor(elapsed / 60)}:
+                    {String(elapsed % 60).padStart(2, "0")}
+                  </span>
+                </div>
+                <p className="camera-hud-cue" aria-live="polite">
+                  {error ||
+                    (loading
+                      ? "Preparing your camera. You can exit at any time."
+                      : status)}
+                </p>
+                <div className="camera-hud-actions">
+                  <button type="button" onClick={stop}>
+                    {loading ? "Cancel camera setup" : "Pause session"}
+                  </button>
+                  {!protocol && running && (
+                    <button type="button" onClick={() => setReps((n) => n + 1)}>
+                      Count a rep
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-          </>
-        ) : (
-          <>
-            <ExerciseDemo exercise={exercise} paused={staticGuide} />
-            <span className="guide-label">
-              Movement illustration · Use your clinician’s range and dose
-            </span>
-          </>
-        )}
-      </div>
+              {correction && dismissed !== correction && running && (
+                <div
+                  className="camera-correction"
+                  data-testid="camera-correction"
+                >
+                  <CorrectionPanel
+                    kind={exercise.type}
+                    correction={correction}
+                    illustration={
+                      ![
+                        "knee-extension",
+                        "bicep-curl",
+                        "shoulder-raise",
+                      ].includes(exercise.id) ? (
+                        <ExerciseDemo
+                          exercise={exercise}
+                          paused={staticGuide}
+                        />
+                      ) : undefined
+                    }
+                    onClose={() => setDismissed(correction)}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <ExerciseDemo exercise={exercise} paused={staticGuide} />
+              <span className="guide-label">
+                Movement illustration · Use your clinician’s range and dose
+              </span>
+            </>
+          )}
+        </div>
+      </CameraStage>
       {mode === "guide" && (
         <button
           className="demo-toggle"
@@ -674,12 +726,6 @@ export function MovementSession({
           <span>PRIVATE BY DESIGN</span>
         </div>
       </div>
-      {mode === "camera" && running && (
-        <div className="live-cue">
-          <span className="tiny-dot" />
-          {status}
-        </div>
-      )}
       <div className="session-target">
         <label htmlFor="rep-target">
           My clinician’s rep target <small>(optional)</small>
