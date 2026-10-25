@@ -193,6 +193,7 @@ export const exercises: Exercise[] = [
   {
     ...base,
     id: "sit-stand",
+    camera: true,
     name: "Supported sit-to-stand",
     area: "Knee",
     type: "sit-stand",
@@ -210,6 +211,7 @@ export const exercises: Exercise[] = [
   {
     ...base,
     id: "mini-squat",
+    camera: true,
     name: "Supported mini-squat",
     area: "Knee",
     type: "mini-squat",
@@ -244,6 +246,7 @@ export const exercises: Exercise[] = [
   {
     ...base,
     id: "hip-abduction",
+    camera: true,
     name: "Supported sideways leg lift",
     area: "Hip",
     type: "hip-abduction",
@@ -278,6 +281,7 @@ export const exercises: Exercise[] = [
   {
     ...base,
     id: "wall-press",
+    camera: true,
     name: "Wall press-up",
     area: "Shoulder",
     type: "wall-press",
@@ -362,6 +366,110 @@ export const exercises: Exercise[] = [
       "Step slowly, look ahead, and keep support as needed.",
     ],
     source: source(balance, "NHS · Balance exercises — heel-to-toe walk"),
+  },
+  {
+    ...base,
+    id: "band-curl",
+    name: "Resistance-band curl",
+    area: "Elbow",
+    type: "curl",
+    camera: true,
+    level: "Clinician-directed resistance",
+    equipment:
+      "An intact resistance band approved by your clinician; secure footwear",
+    instructions:
+      "Use only the band setup and resistance your clinician has taught you. Keep upper arms at your sides as you slowly bend and lower your elbows.",
+    steps: [
+      "Inspect the band for damage. Use only a secure setup taught by your clinician; keep it away from your face.",
+      "With the band secured as instructed, bend your elbows slowly without swinging your upper arms.",
+      "Return with control. Stop if the anchor shifts, the band slips, or symptoms increase.",
+    ],
+    stopIf:
+      "Do not use a damaged band or an improvised anchor. Stop for slipping, unexpected tension, pain, tingling, or dizziness.",
+    source: {
+      title: "Band-specific review pending",
+      url: strength,
+      verified: null,
+      scope:
+        "The NHS source supports an unbanded curl. This equipment adaptation needs individual clinician instruction; the camera cannot assess band tension or anchoring.",
+    },
+  },
+  {
+    ...base,
+    id: "band-row",
+    name: "Clinician-guided band row",
+    area: "Shoulder",
+    type: "band-row",
+    level: "Clinician-directed resistance",
+    equipment:
+      "Intact resistance band and a purpose-built anchor, both checked by your clinician",
+    instructions:
+      "Use only a professionally taught band setup. Draw your elbows back comfortably without leaning, then release the pull slowly.",
+    steps: [
+      "Have your clinician choose the anchor, height, resistance, and range; inspect the band before use.",
+      "Stay comfortably upright and draw your elbows back only through your taught range.",
+      "Let your arms move forward with control; do not release the band suddenly.",
+    ],
+    stopIf:
+      "Stop for pain, an unstable anchor, band damage, or unexpected tension. Do not improvise a door or furniture anchor.",
+    source: {
+      title: "Equipment protocol needs clinician review",
+      url: strength,
+      verified: null,
+      scope:
+        "This illustration is not verified against an exercise-specific source and must not be used as a self-directed injury protocol.",
+    },
+  },
+  {
+    ...base,
+    id: "dowel-flexion",
+    name: "Assisted dowel shoulder lift",
+    area: "Shoulder",
+    type: "dowel-flexion",
+    camera: true,
+    equipment:
+      "A lightweight smooth dowel approved by your clinician; no weighted bar",
+    instructions:
+      "Hold a light dowel in the grip taught by your clinician. Let the other arm assist a comfortable forward lift without forcing the affected shoulder.",
+    steps: [
+      "Use a light unweighted dowel and the grip and position your clinician has taught you.",
+      "Slowly assist a forward lift only within your individually cleared range.",
+      "Lower with control. Do not use the bar to push farther or to trigger a count.",
+    ],
+    stopIf:
+      "Do not use after surgery or dislocation without specific instructions. Stop for pinching, pain, numbness, or forced movement.",
+    source: {
+      title: "Equipment protocol needs clinician review",
+      url: "https://orthoinfo.aaos.org/en/recovery/rotator-cuff-and-shoulder-conditioning-program/",
+      verified: null,
+      scope:
+        "This original direction-of-motion illustration is not a reviewed rehabilitation protocol. Your clinician must set the grip, range, and dose.",
+    },
+  },
+  {
+    ...base,
+    id: "seated-hamstring",
+    name: "Clinician-guided seated hamstring stretch",
+    area: "Hip",
+    type: "hamstring",
+    equipment: "Stable chair and non-slip floor",
+    level: "Clinician-directed stretch",
+    instructions:
+      "Only if cleared, place one heel forward with a softly bent knee. Hinge gently from the hips within the range taught by your clinician.",
+    steps: [
+      "Sit on a stable chair and place one heel forward, keeping the knee softly bent.",
+      "Keep your back comfortable and hinge slightly from your hips; do not round or reach for your toes.",
+      "Return upright slowly. Follow your clinician’s hold time rather than the animation timing.",
+    ],
+    stopIf:
+      "Do not stretch a suspected new hamstring injury. Stop for sharp or radiating pain, numbness, tingling, or worsening symptoms.",
+    source: {
+      title: "Exercise-specific review pending",
+      url: flexibility,
+      verified: null,
+      scope:
+        "This original illustration is not verified against the linked general guidance. Post-workout soreness does not automatically make this stretch appropriate.",
+    },
   },
 ];
 export const cameraExercises = exercises.filter((e) => e.camera);

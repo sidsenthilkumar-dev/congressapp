@@ -1,6 +1,8 @@
 # Rebound
 
-A responsive recovery companion for athletes and everyday people. Built with React, TypeScript, Vite, and MediaPipe Pose.
+A responsive recovery companion for athletes and everyday people. Built with React, TypeScript, Vite, and MediaPipe Pose, with an Expo iPhone client in `mobile/`.
+
+For Mac + Expo Go instructions, see [iPhone testing](docs/IPHONE-TESTING.md). The hybrid iPhone client shares the web screens and adds native recording, reminders, PDF creation, and sharing. Camera coaching needs a reachable HTTPS web deployment; none has been deployed yet.
 
 ## Run locally
 
@@ -21,16 +23,20 @@ The install hook copies the MediaPipe runtime and pose models from the integrity
 - Conservative symptom-based safety holds for unclear, serious, acute, and post-surgical cases
 - Daily discomfort, energy, and notes journal
 - Guided sessions with manual rep counting and session timer
-- On-device camera pose tracking for knee extensions, bicep curls, and shoulder raises
+- Experimental on-device rep estimates for nine guides across eight movement protocols; explicit manual camera-mirror guidance for the remaining movements
 - Camera setup steps, front/rear camera and side selection, framing and view-angle checks, basic lighting estimate, and stability calibration
 - Aspect-corrected joint angles, full out-and-return rep counting, visibility reset, and posture cues
 - Animated movement guides, sustained-issue correction panels, and an elbow close-up animation
-- Eighteen detailed movement guides with equipment and stop criteria; sixteen linked to checked NHS instructions
+- Twenty-two movement guides with equipment and stop criteria; sixteen linked to checked NHS instructions and six clearly marked for review
+- Band curl, band row, assisted dowel lift, and seated hamstring illustrations requiring individual clinician instruction
+- Interactive watch/setup/two-slow-rep lessons and corrections inside the camera panel
+- Follow-up soreness check-in with conservative screening and optional authenticated AI explanation
+- Clinic plans, individual session instructions/targets, private silent clip review, and optional authenticated sharing
 - Bookmarked movements and personal routines with scheduled weekdays and clinician notes
 - Sequential routine sessions, per-movement consent, optional clinician-set rep targets, manual undo, and a rest timer
 - Web-app manifest and home-screen installation instructions (hosting on HTTPS required)
 - Progress history, discomfort chart, active-day calendar, and JSON journal export
-- Local browser persistence; no accounts, backend, credentials, or video uploads
+- Browser-local journal by default; optional Supabase clinic accounts/private clip storage configured separately
 
 Camera mode requires permission, good lighting, a supported browser with WebAssembly/WebGL, and the working joints in view. Joint-angle cues are estimates, not a clinical evaluation or proof of correct form. Ankle pumps use manual counting. Check-ins and sessions are stored in localStorage for this browser; export before clearing site data. Browser storage is not encrypted and should not be used on a shared device for sensitive records.
 
@@ -40,7 +46,7 @@ This prototype provides general movement examples and a personal journal, not di
 
 ## Validation
 
-The production TypeScript/Vite build and 40 automated checks cover journal entry, recovery profile edits, exercise filtering, guided sessions, session persistence after reload, camera permission failure, mobile overflow, all catalog regions, contraindication safety holds, aspect-corrected angle calculations, complete rep cycles for all three supported exercises, occlusion resets, view-angle and arm-drift rejection, correction previews, and sustained-issue live correction UI. Camera inference is additionally checked with a synthetic video feed; real-person accuracy and clinical validity require further evaluation.
+The production TypeScript/Vite build and browser checks cover journal entry, recovery profile edits, exercise filtering, guided sessions, session persistence after reload, camera permission failure, mobile overflow, all catalog regions, contraindication safety holds, aspect-corrected angle calculations, complete rep cycles across all eight experimental motion protocols, occlusion resets, view-angle and arm-drift rejection, correction previews, and sustained-issue live correction UI. Camera inference is additionally checked with a synthetic video feed; real-person accuracy and clinical validity require further evaluation.
 
 Run `npm test` for the Playwright browser suite. The cloud environment uses system Chromium. On other machines, run `npx playwright install chromium` for standard tests and set `CHROMIUM_PATH` to your installed Chromium path for the synthetic-camera check.
 
@@ -50,7 +56,7 @@ With the production preview server running on port 4173, run `node scripts/captu
 
 ## Publishing
 
-The current build is a web app, not a signed iOS app. App Store membership has generally cost US$99/year; eligible institutions may qualify for a waiver. Pricing and review requirements must be verified with Apple before submission. A hosted HTTPS web version can be shared without Apple membership and added to a phone’s home screen. This repository has not been deployed or submitted to any store.
+The repository includes a web app and an Expo iPhone client; neither a signed iOS IPA nor an App Store submission has been produced. App Store membership has generally cost US$99/year; eligible institutions may qualify for a waiver. Pricing and review requirements must be verified with Apple before submission. A hosted HTTPS web version can be shared without Apple membership and added to a phone’s home screen. This repository has not been deployed or submitted to any store.
 
 ## Maintainability
 
@@ -71,3 +77,13 @@ My progress includes a visit-summary builder with saved clinician questions, a 7
 Visual refinements use shared design tokens, readable contrast, keyboard focus states, larger actions, concise transitions, and labeled mobile navigation. Device reduced-motion preferences are respected; individual session guides also offer a static illustration. PNG icons support home-screen installation. There is no offline-use guarantee.
 
 Read [MVP research](docs/MVP-RESEARCH.md) for the verified NHS, MDN, and W3C sources and the distinction between product rationale and proven clinical benefit. Feature-screen capture: `node scripts/capture-mvp.mjs` with a production preview on port 4173. Set `CAPTURE_VIDEO=1` with the Playwright FFmpeg helper to record an interface walkthrough. The sample routine in captures is explicitly labeled as an example and is created through the real UI, not patient footage or fabricated clinical progress.
+
+## iPhone, Clinic, and tracking expansion
+
+The Expo client uses a restricted WKWebView for the shared app screens, plus native silent recording, local iPhone schedules, PDF export, and share sheets. Run `npm ci` in `mobile/`, then `npx expo start`. A reachable web deployment is required; plain LAN HTTP can preview screens, while camera coaching requires HTTPS. See [iPhone testing](docs/IPHONE-TESTING.md).
+
+The default check-in is rule-based and local. Optional AI explanation requires sign-in, explicit opt-in, and a deployed server function with a server-side provider key. It explains a fixed general draft rather than prescribing injury exercises. Live doctor plan delivery and clip uploads require a separately configured Supabase service. See [Clinic setup](docs/CLINIC-SETUP.md).
+
+Run `npm run test:clinic` for six PostgreSQL policy checks, `npm run mobile:typecheck` for native types, and `npm run mobile:bundle` for the iOS JavaScript export. The latter is not a signed native build or a physical-device test. `deno check supabase/functions/recovery-assistant/index.ts` checks the optional server function.
+
+No real-person tracking accuracy, injury-prevention benefit, physical-iPhone camera performance, OS alert display, deployed clinician exchange, or live provider response has been validated. See [tracking coverage](docs/TRACKING-COVERAGE.md).

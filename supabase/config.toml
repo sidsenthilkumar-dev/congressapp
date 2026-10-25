@@ -1,0 +1,4 @@
+[functions.recovery-assistant]
+# The function validates the bearer token with Supabase Auth itself, supporting
+# current signing keys. This does not permit unauthenticated AI requests.
+verify_jwt = false

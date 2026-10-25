@@ -1,0 +1,118 @@
+.sidebar nav .mobile-more-toggle {
+  display: none;
+}
+.mobile-menu-layer {
+  display: none;
+}
+.ask-layout .text-button,
+.clinic-layout .text-button {
+  position: static;
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .sidebar nav .nav-item.mobile-secondary {
+    display: none;
+  }
+  .sidebar nav .nav-item.mobile-more-toggle {
+    display: flex;
+  }
+  .sidebar nav .nav-item {
+    min-width: 44px;
+    min-height: 54px;
+  }
+  .sidebar nav .nav-label::after {
+    font-size: 10px;
+  }
+  .mobile-menu-layer {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: #1e332c66;
+    align-items: flex-end;
+    padding: 16px 14px calc(87px + env(safe-area-inset-bottom, 0px));
+    backdrop-filter: blur(5px);
+  }
+  .mobile-menu-sheet {
+    width: 100%;
+    max-height: 75dvh;
+    overflow: auto;
+    background: #fffef9;
+    border: 1px solid #d7e1cb;
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 15px 70px #1d342933;
+    animation: menu-enter 180ms ease-out;
+  }
+  .mobile-menu-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  .mobile-menu-heading span {
+    font-size: 9px;
+    letter-spacing: 1.3px;
+    color: #738765;
+  }
+  .mobile-menu-heading h2 {
+    font-size: 24px;
+    letter-spacing: -0.8px;
+    margin: 8px 0;
+    color: #263d30;
+  }
+  .mobile-menu-heading > button {
+    border: 1px solid #dce5d2;
+    background: #f3f6ec;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    color: #4c6842;
+  }
+  .mobile-menu-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .mobile-menu-links button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    min-height: 62px;
+    padding: 14px 10px;
+    background: #f4f7ee;
+    border: 1px solid #e0e7d7;
+    border-radius: 13px;
+    color: #47643e;
+    font-size: 12px;
+  }
+  .mobile-menu-links button svg {
+    flex-shrink: 0;
+  }
+  .mobile-menu-links button[aria-current="page"] {
+    border-color: #9db784;
+    background: #e8f0dc;
+  }
+  .mobile-menu-links button:last-child {
+    grid-column: 1/-1;
+  }
+}
+@keyframes menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-sheet {
+    animation: none;
+  }
+}

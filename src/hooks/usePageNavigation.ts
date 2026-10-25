@@ -8,6 +8,8 @@ const routes: Record<string, string> = {
   "My routines": "routines",
   "My progress": "progress",
   Reminders: "reminders",
+  "Ask Rebound": "ask",
+  Clinic: "clinic",
 };
 function currentPage() {
   const slug = location.hash.replace(/^#\/?/, "");

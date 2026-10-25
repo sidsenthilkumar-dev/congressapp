@@ -3,18 +3,12 @@ import {
   Activity,
   ChevronRight,
   Plus,
-  Camera,
-  Heart,
-  House,
-  BookOpen,
-  ChartNoAxesCombined,
   Settings,
   Bell,
-  ShieldCheck,
   Leaf,
   Sun,
-  CalendarDays,
 } from "lucide-react";
+import { AppNavigation } from "./AppNavigation";
 type Props = {
   page: string;
   setPage: (page: string) => void;
@@ -55,50 +49,11 @@ export function AppShell({
           rebound<span className="brand-dot">.</span>
         </a>
         <div className="workspace-label">YOUR RECOVERY SPACE</div>
-        <nav>
-          {[
-            { name: "Overview", icon: House },
-            { name: "My recovery", icon: Heart },
-            { name: "Injury library", icon: ShieldCheck },
-            { name: "Exercise library", icon: BookOpen },
-            { name: "AI movement coach", icon: Camera },
-            { name: "My routines", icon: CalendarDays },
-            { name: "My progress", icon: ChartNoAxesCombined },
-            { name: "Reminders", icon: Bell },
-          ].map(({ name, icon: Icon }) => (
-            <button
-              className={page === name ? "nav-item active" : "nav-item"}
-              key={name}
-              aria-label={name}
-              aria-current={page === name ? "page" : undefined}
-              onClick={() => setPage(name)}
-            >
-              <Icon size={19} />
-              <span
-                className="nav-label"
-                data-short-label={
-                  (
-                    {
-                      Overview: "Today",
-                      "My recovery": "Recovery",
-                      "Injury library": "Injuries",
-                      "Exercise library": "Exercises",
-                      "AI movement coach": "Coach",
-                      "My routines": "Routines",
-                      "My progress": "Progress",
-                      Reminders: "Remind",
-                    } as Record<string, string>
-                  )[name]
-                }
-              >
-                {name}
-              </span>
-              {name === "AI movement coach" && (
-                <span className="ai-tag">AI</span>
-              )}
-            </button>
-          ))}
-        </nav>
+        <AppNavigation
+          page={page}
+          onNavigate={setPage}
+          onSettings={onSettings}
+        />
         <div className="sidebar-bottom">
           <div className="little-note">
             <span className="little-leaf">
@@ -164,21 +119,25 @@ export function AppShell({
                 {today}
               </div>
               <h1>
-                {page === "Reminders"
-                  ? "A gentle nudge. On your terms."
-                  : page === "My routines"
-                    ? "Make a little room for you."
-                    : page === "Overview"
-                      ? "A little stronger, every day."
-                      : page === "Injury library"
-                        ? "Understand your recovery."
-                        : page === "My recovery"
-                          ? "Your recovery, your pace."
-                          : page === "Exercise library"
-                            ? "Find your next small step."
-                            : page === "AI movement coach"
-                              ? "Good movement starts here."
-                              : "See how far you’ve come."}
+                {page === "Clinic"
+                  ? "Care, connected."
+                  : page === "Ask Rebound"
+                    ? "A thoughtful next step."
+                    : page === "Reminders"
+                      ? "A gentle nudge. On your terms."
+                      : page === "My routines"
+                        ? "Make a little room for you."
+                        : page === "Overview"
+                          ? "A little stronger, every day."
+                          : page === "Injury library"
+                            ? "Understand your recovery."
+                            : page === "My recovery"
+                              ? "Your recovery, your pace."
+                              : page === "Exercise library"
+                                ? "Find your next small step."
+                                : page === "AI movement coach"
+                                  ? "Good movement starts here."
+                                  : "See how far you’ve come."}
               </h1>
               <p>
                 {page === "Overview"

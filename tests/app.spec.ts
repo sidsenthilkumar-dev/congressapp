@@ -1,3 +1,4 @@
+import { testOrigin } from "./test-server";
 import { test, expect } from "@playwright/test";
 test("recovery journal, profile, guided session, persistence, and filtering", async ({
   page,
@@ -71,6 +72,17 @@ test("mobile layout has no horizontal overflow and navigation works", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
+  await page.getByRole("button", { name: "More navigation" }).click();
+  await expect(page.getByRole("dialog", { name: "More pages" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "More navigation" }),
+  ).toBeFocused();
+  const navigation = page.getByRole("navigation", { name: "Main navigation" });
+  await expect(navigation.getByRole("button")).toHaveCount(5);
+  for (const action of await navigation.getByRole("button").all())
+    expect((await action.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+  await page.getByRole("button", { name: "More navigation" }).click();
   await page.getByRole("button", { name: "My recovery", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Your recovery, your pace." }),
@@ -112,7 +124,7 @@ test("local pose model initializes, runs inference, and releases camera", async 
     const page = await context.newPage();
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto("http://localhost:5173");
+    await page.goto(testOrigin);
     await page.getByRole("button", { name: "Let’s get moving" }).click();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Enable AI camera" }).click();

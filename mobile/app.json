@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Rebound",
+    "slug": "rebound-recovery",
+    "version": "1.0.0",
+    "scheme": "rebound",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "dev.rebound.recovery",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Use your camera for on-device movement estimates and short clips you choose to record.",
+        "NSMicrophoneUsageDescription": "Rebound records silent exercise clips; microphone access is not requested.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Rebound to show on-device movement guidance and record clips only when you choose.",
+          "recordAudioAndroid": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "privacyNotice": "No automatic recording or clip upload. Clinic and AI services require separate configuration."
+    }
+  }
+}

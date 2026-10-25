@@ -202,8 +202,9 @@ test("manual static guide and reduced-motion preferences work; mobile daily plan
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
+  await page.getByRole("button", { name: "More navigation" }).click();
   await page
-    .locator("nav")
+    .getByRole("dialog", { name: "More pages" })
     .getByRole("button", { name: "Reminders", exact: true })
     .click();
   expect(

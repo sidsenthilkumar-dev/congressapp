@@ -1,5 +1,5 @@
 import { ArrowRight, Check, RotateCcw, ShieldCheck, X } from "lucide-react";
-import { useState, useId } from "react";
+import { useState, useId, type ReactNode } from "react";
 import type { Correction } from "../../domain/tracking";
 export type { Correction } from "../../domain/tracking";
 export const correctionText: Record<
@@ -424,11 +424,13 @@ export function CorrectionPanel({
   correction,
   preview = false,
   onClose,
+  illustration,
 }: {
   kind: string;
   correction: Correction;
   preview?: boolean;
   onClose: () => void;
+  illustration?: ReactNode;
 }) {
   const content = correctionText[correction];
   return (
@@ -454,11 +456,12 @@ export function CorrectionPanel({
         </button>
       </div>
       <div className="correction-content">
-        {correction === "elbow" ? (
-          <ElbowAdjustment />
-        ) : (
-          <MotionGuide kind={kind} correction={correction} compact />
-        )}
+        {illustration ??
+          (correction === "elbow" ? (
+            <ElbowAdjustment />
+          ) : (
+            <MotionGuide kind={kind} correction={correction} compact />
+          ))}
         <div>
           <p>{content.detail}</p>
           <ol>

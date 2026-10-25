@@ -23,3 +23,8 @@ export type Routine = {
   days: number[];
   createdAt: string;
 };
+export type SessionInstructions = {
+  note: string;
+  source: string;
+  reps?: number;
+};

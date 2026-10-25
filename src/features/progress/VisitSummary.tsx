@@ -18,6 +18,7 @@ import {
 import type { Entry, Routine, Session } from "../../domain/types";
 import type { RecoveryProfile } from "../../domain/recovery";
 import "./visit-summary.css";
+import { requestNativeExport } from "../../services/nativeBridge";
 const isQuestions = (v: unknown): v is string[] =>
   Array.isArray(v) &&
   v.length <= 20 &&
@@ -54,6 +55,19 @@ export function VisitSummary({
     generatedAt: new Date().toISOString(),
   });
   function print() {
+    if (
+      requestNativeExport(
+        visitReportHtml(report()),
+        "rebound-visit-summary.html",
+        "text/html",
+        true,
+      )
+    ) {
+      setMessage(
+        "Summary prepared for the iPhone PDF share sheet. Choose whether and where to save or share it.",
+      );
+      return;
+    }
     const popup = window.open("", "_blank");
     if (!popup) {
       setMessage(
@@ -215,7 +229,7 @@ export function VisitSummary({
                   "text/html",
                 );
                 setMessage(
-                  "Summary downloaded. It contains personal health information; share it only with someone you choose.",
+                  "Summary prepared. It contains personal health information; share it only with someone you choose.",
                 );
               }}
             >

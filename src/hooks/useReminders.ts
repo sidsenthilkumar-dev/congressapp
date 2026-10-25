@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Routine, Session } from "../domain/types";
+import { downloadFile } from "../domain/visitReport";
 import {
   REMINDER_STORAGE_KEY,
   initialReminderState,
@@ -451,18 +452,13 @@ export function useReminders(options: Options) {
       return;
     }
     const content = buildReminderCalendar(schedules, stateRef.current.settings);
-    const url = URL.createObjectURL(
-      new Blob([content], { type: "text/calendar;charset=utf-8" }),
+    downloadFile(
+      content,
+      "rebound-reminders.ics",
+      "text/calendar;charset=utf-8",
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "rebound-reminders.ics";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus(
-      "Calendar file downloaded. Import it into your calendar and check that alerts are enabled there.",
+      "Calendar file prepared. Import it into your calendar and check that alerts are enabled there.",
     );
   };
   return {

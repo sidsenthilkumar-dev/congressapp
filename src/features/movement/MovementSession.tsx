@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import type { Pose, Results } from "@mediapipe/pose";
 import type { Exercise } from "../../domain/exercises";
+import type { SessionInstructions } from "../../domain/types";
 import { ExerciseDemo } from "../../components/ExerciseDemo";
 import { RestTimer } from "./RestTimer";
 import { CorrectionPanel, CorrectionPreview } from "./MotionGuide";
+import { cameraProtocol, trackingCoverage } from "../../domain/coaching";
 import {
   MotionTracker,
   type Correction,
@@ -33,10 +35,12 @@ export function MovementSession({
   safetyBlocked,
   safetyMessage,
   onSave,
+  instructions,
 }: {
   exercise: Exercise;
   safetyBlocked: boolean;
   safetyMessage: string;
+  instructions?: SessionInstructions;
   onSave: (
     reps: number,
     details: {
@@ -45,6 +49,11 @@ export function MovementSession({
     },
   ) => void;
 }) {
+  const protocol = cameraProtocol(exercise);
+  const coverage = trackingCoverage(exercise);
+  const [lesson, setLesson] = useState(0);
+  const [practiceReps, setPracticeReps] = useState(0);
+  const practiceRef = useRef(0);
   const [cleared, setCleared] = useState(false);
   const [mode, setMode] = useState<"guide" | "camera">("guide");
   const [running, setRunning] = useState(false);
@@ -53,7 +62,9 @@ export function MovementSession({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState(
+    instructions?.reps ? String(instructions.reps) : "",
+  );
   const [staticGuide, setStaticGuide] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -85,10 +96,12 @@ export function MovementSession({
   const active = useRef(false);
   const previousTime = useRef(-1);
   const mounted = useRef(true);
+  const cameraRequest = useRef(0);
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      cameraRequest.current++;
       active.current = false;
       cancelAnimationFrame(raf.current);
       stream.current?.getTracks().forEach((t) => t.stop());
@@ -102,11 +115,19 @@ export function MovementSession({
   }, [running]);
   async function startCamera() {
     if (safetyBlocked || !cleared) return;
+    const request = ++cameraRequest.current;
+    if (protocol) {
+      practiceRef.current = 0;
+      setPracticeReps(0);
+    }
     tracker.current.reset();
     setTracking(null);
     setCorrection(null);
     setDismissed(null);
     setLighting("Checking");
+    dimRef.current = false;
+    sampledAt.current = 0;
+    previousTime.current = -1;
     setError("");
     setLoading(true);
     setMode("camera");
@@ -119,13 +140,25 @@ export function MovementSession({
         video: { width: 640, height: 480, facingMode: { ideal: facing } },
         audio: false,
       });
-      if (!mounted.current) {
+      if (!mounted.current || request !== cameraRequest.current) {
         stream.current.getTracks().forEach((t) => t.stop());
         return;
       }
       if (video.current) {
         video.current.srcObject = stream.current;
         await video.current.play();
+      }
+      if (!mounted.current || request !== cameraRequest.current) {
+        stream.current?.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      if (!protocol) {
+        active.current = true;
+        setRunning(true);
+        setStatus(
+          "Camera mirror only. Follow your clinician’s instructions and count manually; no form assessment is running.",
+        );
+        return;
       }
       if (!window.Pose) {
         await new Promise<void>((resolve, reject) => {
@@ -137,20 +170,21 @@ export function MovementSession({
           document.head.appendChild(script);
         });
       }
-      if (!mounted.current) return;
-      landmarker.current = new window.Pose({
+      if (!mounted.current || request !== cameraRequest.current) return;
+      const model = new window.Pose({
         locateFile: (file: string) => "/pose/" + file,
       });
-      landmarker.current.setOptions({
-        modelComplexity: 0,
+      landmarker.current = model;
+      model.setOptions({
+        modelComplexity: 1,
         smoothLandmarks: true,
-        minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6,
+        minDetectionConfidence: 0.75,
+        minTrackingConfidence: 0.75,
       });
-      landmarker.current.onResults(handleResults);
-      await landmarker.current.initialize();
-      if (!mounted.current) {
-        landmarker.current?.close();
+      model.onResults(handleResults);
+      await model.initialize();
+      if (!mounted.current || request !== cameraRequest.current) {
+        model.close();
         return;
       }
       active.current = true;
@@ -158,6 +192,7 @@ export function MovementSession({
       setStatus("Step back so your joints are visible.");
       detect();
     } catch (e) {
+      if (!mounted.current || request !== cameraRequest.current) return;
       setError(
         e instanceof Error
           ? e.message
@@ -166,12 +201,13 @@ export function MovementSession({
       stream.current?.getTracks().forEach((t) => t.stop());
       setRunning(false);
     } finally {
-      setLoading(false);
+      if (mounted.current && request === cameraRequest.current)
+        setLoading(false);
     }
   }
   function handleResults(result: Results) {
     const v = video.current;
-    if (!active.current || !v) return;
+    if (!active.current || !v || !protocol) return;
     const ctx = canvas.current?.getContext("2d");
     if (ctx && canvas.current) {
       canvas.current.width = v.videoWidth;
@@ -203,10 +239,11 @@ export function MovementSession({
     const p = result.poseLandmarks;
     const resultState = tracker.current.update(
       p,
-      exercise.type as TrackedMovement,
+      protocol.movement as TrackedMovement,
       sideRef.current,
       performance.now(),
       v.videoWidth / Math.max(v.videoHeight, 1),
+      practiceRef.current < 2 ? 3000 : 1200,
     );
     if (dimRef.current) {
       tracker.current.reset();
@@ -218,7 +255,11 @@ export function MovementSession({
     }
     setTracking(resultState);
     setStatus(resultState.cue);
-    if (resultState.rep) setReps((n) => n + 1);
+    if (resultState.rep) {
+      setReps((n) => n + 1);
+      practiceRef.current = Math.min(2, practiceRef.current + 1);
+      setPracticeReps(practiceRef.current);
+    }
     if (resultState.correction !== correctionSince.current.issue) {
       correctionSince.current = { issue: resultState.correction, time: now };
       setDismissed(null);
@@ -233,17 +274,21 @@ export function MovementSession({
       ctx.strokeStyle = resultState.ready ? "#d5f384" : "#f3d294";
       ctx.lineWidth = 4;
       const main =
-        exercise.type === "curl"
+        protocol.movement === "curl" || protocol.movement === "wall-press"
           ? resultState.side === "Left"
             ? [11, 13, 15]
             : [12, 14, 16]
-          : exercise.type === "knee"
+          : ["knee", "squat", "sit-stand"].includes(protocol.movement)
             ? resultState.side === "Left"
               ? [23, 25, 27]
               : [24, 26, 28]
-            : resultState.side === "Left"
-              ? [23, 11, 13, 15]
-              : [24, 12, 14, 16];
+            : protocol.movement === "hip-abduction"
+              ? resultState.side === "Left"
+                ? [11, 23, 25, 27]
+                : [12, 24, 26, 28]
+              : resultState.side === "Left"
+                ? [23, 11, 13, 15]
+                : [24, 12, 14, 16];
       ctx.beginPath();
       main.forEach((id, j) =>
         j
@@ -283,19 +328,89 @@ export function MovementSession({
     if (active.current) raf.current = requestAnimationFrame(detect);
   }
   function stop() {
+    cameraRequest.current++;
     active.current = false;
     cancelAnimationFrame(raf.current);
     stream.current?.getTracks().forEach((t) => t.stop());
     landmarker.current?.close();
     landmarker.current = null;
     setRunning(false);
+    setLoading(false);
     setMode("guide");
   }
+  useEffect(() => {
+    const background = () => stop();
+    const visibility = () => {
+      if (document.hidden) stop();
+    };
+    window.addEventListener("rebound:native-background", background);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      window.removeEventListener("rebound:native-background", background);
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, []);
   return (
     <>
       <span className="eyebrow">YOUR GUIDED MOVEMENT</span>
       <h2>{exercise.name}</h2>
       <p>{exercise.instructions}</p>
+      {instructions?.note && (
+        <section className="session-plan-note">
+          <span className="eyebrow">{instructions.source}</span>
+          <h3>Your individual instructions</h3>
+          <p>{instructions.note}</p>
+        </section>
+      )}
+      <section
+        className="movement-lesson"
+        aria-label="Interactive movement lesson"
+      >
+        <div className="lesson-heading">
+          <span className="eyebrow">LEARN THE MOVEMENT</span>
+          <strong>Watch. Set up. Move slowly.</strong>
+        </div>
+        <div className="lesson-tabs" role="group" aria-label="Lesson steps">
+          {["Watch the movement", "Check your setup", "Try 2 slow reps"].map(
+            (title, i) => (
+              <button
+                key={title}
+                className={lesson === i ? "active" : ""}
+                aria-pressed={lesson === i}
+                onClick={() => setLesson(i)}
+              >
+                <b>0{i + 1}</b>
+                {title}
+              </button>
+            ),
+          )}
+        </div>
+        <p aria-live="polite">
+          {lesson === 0
+            ? "Follow the illustration below. It shows the direction of movement; your clinician sets your range and dose."
+            : lesson === 1
+              ? protocol
+                ? `Use a ${protocol.view}-on view, a stable phone, and even light. Keep the working joints visible. ${protocol.cannotObserve} cannot be checked by the camera.`
+                : "Use the camera as a mirror if helpful. This exercise uses manual counting; the app cannot verify its form."
+              : "For the first two repetitions, take about three seconds or longer for the full out-and-return. Never increase your range to earn a count."}
+        </p>
+        <div className="practice-state">
+          <span>
+            {practiceReps < 2
+              ? `Slow practice · ${practiceReps} / 2`
+              : "Practice reps logged · 2 / 2"}
+          </span>
+          <small>
+            {mode === "camera" && protocol
+              ? "Camera estimates movement only; practice is not a safety assessment."
+              : "Manual practice is self-reported; the app does not verify your form."}
+          </small>
+        </div>
+      </section>
+      <div className="tracking-scope">
+        <strong>{coverage.title}</strong>
+        <p>{coverage.detail}</p>
+      </div>
       {safetyBlocked && (
         <div className="warning clinical-block" role="alert">
           <ShieldCheck size={20} />
@@ -338,7 +453,7 @@ export function MovementSession({
             : exercise.source.scope}
         </small>
       </section>
-      {exercise.camera && (
+      {
         <section className="camera-setup">
           <button
             className="setup-heading"
@@ -357,14 +472,20 @@ export function MovementSession({
                 <div>
                   <b>01</b>
                   <strong>
-                    {exercise.type === "shoulder"
-                      ? "Face the camera"
-                      : "Turn side-on"}
+                    {!protocol
+                      ? "Choose a useful mirror view"
+                      : protocol.view === "front"
+                        ? "Face the camera"
+                        : "Turn side-on"}
                   </strong>
                   <p>
-                    {exercise.type === "shoulder"
-                      ? "Keep both shoulders, hips, elbows, and wrists in view."
-                      : "Place the camera at working-joint height. Show the whole working limb."}
+                    {!protocol
+                      ? "Keep the working region and any support in view. This mirror does not assess form or count automatically."
+                      : protocol.movement === "hip-abduction"
+                        ? "Keep both shoulders, hips, knees, and ankles in view."
+                        : protocol.view === "front"
+                          ? "Keep both shoulders, hips, elbows, and wrists in view."
+                          : "Place the camera at working-joint height. Show the whole working limb."}
                   </p>
                 </div>
                 <div>
@@ -377,30 +498,35 @@ export function MovementSession({
                 </div>
                 <div>
                   <b>03</b>
-                  <strong>Let the coach settle</strong>
+                  <strong>
+                    {protocol ? "Let the coach settle" : "Move only as taught"}
+                  </strong>
                   <p>
-                    Hold still for a moment. Counting waits for clear joints and
-                    a suitable camera angle.
+                    {protocol
+                      ? "Hold still for a moment. Counting waits for clear joints and a suitable camera angle."
+                      : "Use your clinician’s instructions and count manually. No camera form assessment is running."}
                   </p>
                 </div>
               </div>
               <div className="camera-controls">
-                <label>
-                  Working side
-                  <select
-                    aria-label="Working side"
-                    value={trackingSide}
-                    disabled={running}
-                    onChange={(e) => {
-                      setTrackingSide(e.target.value as TrackingSide);
-                      tracker.current.reset();
-                    }}
-                  >
-                    {["Automatic", "Left", "Right"].map((x) => (
-                      <option key={x}>{x}</option>
-                    ))}
-                  </select>
-                </label>
+                {protocol && (
+                  <label>
+                    Working side
+                    <select
+                      aria-label="Working side"
+                      value={trackingSide}
+                      disabled={running}
+                      onChange={(e) => {
+                        setTrackingSide(e.target.value as TrackingSide);
+                        tracker.current.reset();
+                      }}
+                    >
+                      {["Automatic", "Left", "Right"].map((x) => (
+                        <option key={x}>{x}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label>
                   Camera
                   <select
@@ -423,7 +549,7 @@ export function MovementSession({
             </>
           )}
         </section>
-      )}
+      }
       <div
         className={
           "coach-view enhanced-view " +
@@ -445,14 +571,37 @@ export function MovementSession({
               <span />
               {loading
                 ? "Preparing camera"
-                : tracking?.ready
-                  ? "Tracking · " + tracking.side + " side"
-                  : "Finding your position"}
+                : !protocol
+                  ? "Camera mirror · Manual count"
+                  : tracking?.ready
+                    ? "Tracking · " + tracking.side + " side"
+                    : "Finding your position"}
             </span>
             <canvas ref={canvas} />
             {loading && (
               <div className="camera-loading">
                 Preparing your camera & pose model…
+              </div>
+            )}
+            {correction && dismissed !== correction && running && (
+              <div
+                className="camera-correction"
+                data-testid="camera-correction"
+              >
+                <CorrectionPanel
+                  kind={exercise.type}
+                  correction={correction}
+                  illustration={
+                    ![
+                      "knee-extension",
+                      "bicep-curl",
+                      "shoulder-raise",
+                    ].includes(exercise.id) ? (
+                      <ExerciseDemo exercise={exercise} paused={staticGuide} />
+                    ) : undefined
+                  }
+                  onClose={() => setDismissed(correction)}
+                />
               </div>
             )}
           </>
@@ -476,7 +625,7 @@ export function MovementSession({
             : "Show static movement guide"}
         </button>
       )}
-      {mode === "camera" && running && (
+      {mode === "camera" && running && protocol && (
         <div className="camera-readiness">
           <span className={tracking?.visible ? "pass" : ""}>
             <CheckCircle2 size={13} />
@@ -501,16 +650,6 @@ export function MovementSession({
           </div>
         </div>
       )}
-      {correction &&
-        dismissed !== correction &&
-        mode === "camera" &&
-        running && (
-          <CorrectionPanel
-            kind={exercise.type}
-            correction={correction}
-            onClose={() => setDismissed(correction)}
-          />
-        )}
       {mode === "guide" && exercise.camera && (
         <CorrectionPreview kind={exercise.type} />
       )}
@@ -585,6 +724,11 @@ export function MovementSession({
         I have medical clearance for this movement and will stop if it hurts.
       </label>
       <div className="session-actions">
+        {loading && (
+          <button className="outline" onClick={stop}>
+            Cancel camera setup
+          </button>
+        )}
         {!running ? (
           <>
             <button
@@ -598,16 +742,16 @@ export function MovementSession({
               <Play size={16} />
               Start guided session
             </button>
-            {exercise.camera && (
+            {
               <button
                 className="outline"
                 disabled={!cleared || loading || safetyBlocked}
                 onClick={startCamera}
               >
                 <Camera size={16} />
-                Enable AI camera
+                {protocol ? "Enable AI camera" : "Open camera mirror"}
               </button>
-            )}
+            }
           </>
         ) : (
           <>
@@ -632,8 +776,15 @@ export function MovementSession({
                 Switch to manual <ArrowRight size={15} />
               </button>
             )}
-            {mode === "guide" && (
-              <button className="outline" onClick={() => setReps((n) => n + 1)}>
+            {(mode === "guide" || !protocol) && (
+              <button
+                className="outline"
+                onClick={() => {
+                  setReps((n) => n + 1);
+                  practiceRef.current = Math.min(2, practiceRef.current + 1);
+                  setPracticeReps(practiceRef.current);
+                }}
+              >
                 <Plus size={16} />
                 Count a rep
               </button>
@@ -657,7 +808,11 @@ export function MovementSession({
       {mode === "guide" && reps > 0 && (
         <button
           className="undo-rep"
-          onClick={() => setReps((n) => Math.max(0, n - 1))}
+          onClick={() => {
+            setReps((n) => Math.max(0, n - 1));
+            practiceRef.current = Math.min(2, Math.max(0, reps - 1));
+            setPracticeReps(practiceRef.current);
+          }}
         >
           Undo last manual rep
         </button>

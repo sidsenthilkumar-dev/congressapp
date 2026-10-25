@@ -1,11 +1,13 @@
 import { defineConfig } from "@playwright/test";
 import { existsSync } from "node:fs";
+import { testOrigin, testPort } from "./tests/test-server";
 export default defineConfig({
   testDir: "./tests",
+  testMatch: "**/*.spec.ts",
   workers: 1,
   timeout: 60000,
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: testOrigin,
     headless: true,
     launchOptions: {
       executablePath:
@@ -15,8 +17,8 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: "npm run dev -- --port 5173",
-    url: "http://localhost:5173",
+    command: `npm run dev -- --port ${testPort} --strictPort`,
+    url: testOrigin,
     reuseExistingServer: true,
   },
 });

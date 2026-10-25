@@ -38,8 +38,8 @@ export function CoachPage({
           </p>
           <div className="privacy-note">
             <ShieldCheck size={19} />
-            Your video is processed in your browser and is never recorded or
-            uploaded.
+            Live coaching stays on your device. Recording and sharing are
+            separate, optional actions in Clinic.
           </div>
         </div>
         <div className="pose-illustration">

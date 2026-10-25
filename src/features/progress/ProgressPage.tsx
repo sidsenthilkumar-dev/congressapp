@@ -11,6 +11,7 @@ import { Stat, Empty } from "../../components/ui";
 import { type RecoveryProfile } from "../../domain/recovery";
 import type { Entry, Session, Routine } from "../../domain/types";
 import { VisitSummary } from "./VisitSummary";
+import { downloadFile } from "../../domain/visitReport";
 export function ProgressPage({
   injury,
   entries,
@@ -123,22 +124,18 @@ export function ProgressPage({
       <button
         className="outline"
         onClick={() => {
-          const blob = new Blob(
-            [
-              JSON.stringify(
-                { injury, entries, sessions, routines, bookmarks },
-                null,
-                2,
-              ),
-            ],
-            { type: "application/json" },
+          downloadFile(
+            JSON.stringify(
+              { injury, entries, sessions, routines, bookmarks },
+              null,
+              2,
+            ),
+            "rebound-recovery-journal.json",
+            "application/json",
           );
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "rebound-recovery-journal.json";
-          a.click();
-          URL.revokeObjectURL(a.href);
-          setToast("Your recovery journal has been exported.");
+          setToast(
+            "Your journal is prepared. Choose where to save or share the exported file.",
+          );
         }}
       >
         Export my recovery journal <ArrowUpRight size={15} />

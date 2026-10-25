@@ -1,12 +1,19 @@
 import { test, expect } from "@playwright/test";
 import { exercises, exerciseById } from "../src/domain/exercises";
 import { conditions, regions } from "../src/domain/recovery";
-const navigate = async (page: import("@playwright/test").Page, name: string) =>
-  page.locator("nav").getByRole("button", { name, exact: true }).click();
+const navigate = async (
+  page: import("@playwright/test").Page,
+  name: string,
+) => {
+  const target = page.getByRole("button", { name, exact: true });
+  if (!(await target.isVisible()))
+    await page.getByRole("button", { name: "More navigation" }).click();
+  await target.click();
+};
 test("movement content has stable identities, detailed instructions, and accurate source provenance", () => {
-  expect(exercises).toHaveLength(18);
-  expect(exerciseById.size).toBe(18);
-  expect(exercises.filter((e) => e.camera)).toHaveLength(3);
+  expect(exercises).toHaveLength(22);
+  expect(exerciseById.size).toBe(22);
+  expect(exercises.filter((e) => e.camera)).toHaveLength(9);
   expect(exercises.filter((e) => e.source.verified)).toHaveLength(16);
   for (const e of exercises) {
     expect(e.steps.length).toBeGreaterThanOrEqual(3);

@@ -198,10 +198,13 @@ async function seeded(
     },
   );
   await page.goto("/");
-  await page
-    .locator("nav")
-    .getByRole("button", { name: "Reminders", exact: true })
-    .click();
+  const destination = page.getByRole("button", {
+    name: "Reminders",
+    exact: true,
+  });
+  if (!(await destination.isVisible()))
+    await page.getByRole("button", { name: "More navigation" }).click();
+  await destination.click();
 }
 test("due reminders persist, snooze, return once, and stay dismissed after reload", async ({
   page,
@@ -241,7 +244,7 @@ test("completed routine suppresses its due reminder and calendar export remains 
     .click();
   expect((await download).suggestedFilename()).toBe("rebound-reminders.ics");
   await expect(
-    page.getByText("Calendar file downloaded.", { exact: false }),
+    page.getByText("Calendar file prepared.", { exact: false }),
   ).toBeVisible();
 });
 test("denied notification permission is explained without repeated requests", async ({

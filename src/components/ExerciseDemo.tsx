@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import type { Exercise } from "../domain/exercises";
 import { MotionGuide } from "../features/movement/MotionGuide";
+import { EquipmentDemo } from "../features/movement/EquipmentDemo";
 function useMotionPreference() {
   const [reduced, setReduced] = useState(
     () => matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -58,7 +59,13 @@ export function ExerciseDemo({
   const animate = motionAllowed && !paused;
   const id = useId();
   const kind = exercise.type;
-  if (exercise.camera || kind === "ankle")
+  if (
+    ["band-curl", "band-row", "dowel-flexion", "seated-hamstring"].includes(
+      exercise.id,
+    )
+  )
+    return <EquipmentDemo exercise={exercise} paused={!animate} />;
+  if (["knee", "curl", "shoulder", "ankle"].includes(kind))
     return <MotionGuide kind={kind} compact={compact} paused={paused} />;
   const seated = [
     "hip-march",

@@ -19,7 +19,7 @@ The NHS pages below were successfully retrieved over HTTPS and read during this 
 
 The NHS knee-exercises-for-runners page was also read. It explicitly states that its exercises are not suitable for people with an existing knee injury. It was therefore **not** used as evidence that the knee-extension camera example treats an injured knee. Two original examples (seated knee extension and shoulder side raise) retain visible reference-review-pending labels and require specific professional clearance.
 
-Sixteen of the 18 general movement guides are linked to the checked NHS exercise instructions. The instructions are paraphrased and the diagrams are original. NHS general adult guidance is not automatically appropriate for an injured person, a child, or an athlete with specific restrictions. The app does not copy the source's generic repetition suggestions into an individualized prescription. The user’s treating clinician determines range and dose.
+Sixteen of the 22 movement guides are linked to the checked NHS exercise instructions. The instructions are paraphrased and the diagrams are original. NHS general adult guidance is not automatically appropriate for an injured person, a child, or an athlete with specific restrictions. The app does not copy the source's generic repetition suggestions into an individualized prescription. The user’s treating clinician determines range and dose.
 
 AAOS knee and shoulder conditioning pages were retried and still returned an egress-proxy 403. Their contents remain unverified. The 150-topic condition catalog covers common injuries and recovery situations across 13 regions; adding names is not equivalent to a clinical review of each entry. The catalog, safety routing, diagrams, and app-specific tracking heuristics still need professional review.
 
@@ -31,7 +31,7 @@ Recovery routines contain movements selected by the user and notes from their ow
 
 ## Camera behavior
 
-MediaPipe runs locally. Camera setup checks landmark visibility, framing, view, light, and alignment before counting. A stable side is locked during calibration. Aspect-corrected angle smoothing and full out-and-return cycles reduce duplicate counts; missing or unsuitable input resets the cycle. Three movements support automatic counting; all others are labeled manual. Camera frames are neither recorded nor uploaded.
+MediaPipe runs locally. Camera setup checks landmark visibility, framing, view, light, and alignment before counting. A stable side is locked during calibration. Aspect-corrected angle smoothing and full out-and-return cycles reduce duplicate counts; missing or unsuitable input resets the cycle. Nine guides expose experimental automatic rep estimates; all others are labeled manual. Normal coaching frames are neither recorded nor uploaded. Clinic has a separate explicit recording/review/consent workflow; see CLINIC-SETUP.md.
 
 Absolute range and posture thresholds are engineering heuristics. Restricted but clinically appropriate movement may not trigger them. Users must not stretch farther to satisfy a counter; manual counting remains available. Real-person accuracy and physical-phone testing are still necessary. A synthetic video test verifies runtime/model integration, not clinical accuracy.
 
@@ -44,3 +44,5 @@ Apple Developer Program membership has generally cost US$99 per year (or local e
 - https://developer.apple.com/app-store/review/guidelines/
 
 The repository builds a web app. No signed iOS binary, account enrollment, payment, hosting deployment, or store submission has occurred. A hosted HTTPS version can be shared without Apple membership and added to a phone's home screen. Hosting has its own terms and possible costs. A web-app manifest is supplied; no offline guarantee is made.
+
+The current equipment additions, tracking boundaries, and October 25 source checks are documented in [TRACKING-COVERAGE.md](TRACKING-COVERAGE.md). They are not claims of exercise-specific clinical validation.

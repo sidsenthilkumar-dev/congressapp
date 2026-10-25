@@ -30,7 +30,7 @@ Safety holds are resolved before starting a session. A generic clearance checkbo
 
 The camera is opened only after consent and is released when the session pauses, its dialog closes, tracking fails, or the component unmounts. Inference is serialized: each frame waits for the previous model call. Basic light checks, landmark visibility, camera-view checks, side locking, and calibration gate automatic counting.
 
-Three exercises support automatic reps. Other movements explicitly use manual counting. Illustration and correction-preview labels distinguish a demonstration from a live finding. SVG guides honor reduced-motion preferences. Camera models do not upload frames or record video. Preview recordings in `artifacts/` are recordings of the interface, not patient footage.
+Nine guides expose experimental rep estimates through eight protocols. Other movements explicitly use manual counting. Illustration and correction-preview labels distinguish a demonstration from a live finding. SVG guides honor reduced-motion preferences. Normal camera coaching does not upload frames or record video. Clinic recording is separate and requires review and explicit upload consent. Preview recordings in `artifacts/` are recordings of the interface, not patient footage.
 
 ## Testing
 
@@ -49,3 +49,11 @@ Real-person camera accuracy, physical-device coverage, clinical validation, and 
 `usePageNavigation.ts` provides hash-based navigation and browser-history support. `useLocalStorage` listens for same-origin storage changes, which keeps completion and reminder inputs consistent across tabs. Stored data remains local to the browser; this is not multi-device synchronization.
 
 `styles/premium.css` is the final visual layer. It defines shared ink/sage/ivory tokens, readable controls, focus states, motion durations, reduced-motion equivalents, compact labeled navigation, and daily-plan presentation. Static motion controls supplement device preferences. Asset icons are original SVG artwork rendered to PNG by `scripts/generate-app-icons.mjs`.
+
+## iPhone and care modules
+
+`src/domain/checkIn.ts` supplies shared conservative screening to the UI and the optional authenticated Edge Function. `src/domain/clinic.ts` validates bounded plan data independently of service configuration. `src/services/clinic.ts` owns optional Supabase access and private upload finalization. Clinic plan composition, plan cards, and clip recording are separate feature components; source/profile safety holds still apply during sessions.
+
+`mobile/` is a standalone Expo SDK 58 package with its own lockfile. The origin-restricted WebView shares the web screens; native modules handle recording, local weekly alerts, exports, and PDF/share sheets. Bridge requests are user-driven, restricted by origin/type/size, and never automatically upload clips. The website must be reachable, and coaching requires HTTPS. The client does not bundle an offline website or a native pose engine.
+
+The SQL migration uses row-level policies, server-provisioned clinician approval, hashed expiring invitations, connection-scoped plans, private storage, short-lived signed links, and per-user AI request limits. Tests execute the real migration against PGlite fixtures. Deployed Supabase Auth/Storage, actual iPhone behavior, provider responses, account deletion/retention operations, clinical validation, and signing remain release prerequisites.

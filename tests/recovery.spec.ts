@@ -1,3 +1,4 @@
+import { testOrigin } from "./test-server";
 import { test, expect } from "@playwright/test";
 import {
   assessProfile,
@@ -198,6 +199,7 @@ test("injury search, safety hold, correction preview, and mobile library", async
   await expect(page.locator(".correcting-torso")).toBeVisible();
   await page.getByRole("button", { name: "Close dialog" }).click();
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "More navigation" }).click();
   await page
     .getByRole("button", { name: "Injury library", exact: true })
     .click();
@@ -246,7 +248,7 @@ test("sustained live misalignment opens an animated correction and does not coun
       } as any;
     }, p);
     const page = await context.newPage();
-    await page.goto("http://localhost:5173");
+    await page.goto(testOrigin);
     await page.getByRole("button", { name: "Let’s get moving" }).click();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Enable AI camera" }).click();

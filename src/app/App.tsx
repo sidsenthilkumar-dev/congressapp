@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   ArrowRight,
   House,
@@ -25,13 +25,24 @@ import {
 } from "../features/recovery/RecoveryForms";
 import { ExerciseLibraryPage } from "../features/exercises/ExerciseLibraryPage";
 import { RoutinesPage } from "../features/routines/RoutinesPage";
-import type { Routine } from "../domain/types";
+import type { Routine, SessionInstructions } from "../domain/types";
 import { MovementSession } from "../features/movement/MovementSession";
 import {
   RecoveryLibrary,
   SafetyCard,
 } from "../features/recovery/RecoveryLibrary";
 import { assessProfile } from "../domain/recovery";
+const AskPage = lazy(() =>
+  import("../features/ask/AskPage").then((module) => ({
+    default: module.AskPage,
+  })),
+);
+const ClinicPage = lazy(() =>
+  import("../features/clinic/ClinicPage").then((module) => ({
+    default: module.ClinicPage,
+  })),
+);
+import "../styles/care.css";
 export function App() {
   const [page, setPage] = usePageNavigation();
   const [modal, setModal] = useState("");
@@ -52,6 +63,8 @@ export function App() {
     storageError,
   } = useRecoveryData();
   const [selected, setSelected] = useState(0);
+  const [clinicInstructions, setClinicInstructions] =
+    useState<SessionInstructions | null>(null);
   const [toast, setToast] = useState("");
   const [routineQueue, setRoutineQueue] = useState<string[]>([]);
   const [activeRun, setActiveRun] = useState<{
@@ -106,6 +119,7 @@ export function App() {
     setModal("injury");
   }
   function openExercise(i: number) {
+    setClinicInstructions(null);
     setRoutineQueue([]);
     setActiveRun(null);
     setSelected(i);
@@ -116,6 +130,7 @@ export function App() {
     if (index >= 0) openExercise(index);
   }
   function startRoutine(routine: Routine) {
+    setClinicInstructions(null);
     if (safety.blocked) {
       setToast(safety.title);
       return;
@@ -164,6 +179,42 @@ export function App() {
         onSettings={() => setModal("settings")}
         reminderCount={reminders.activeCount}
       >
+        {page === "Ask Rebound" && (
+          <Suspense fallback={<p role="status">Opening your check-in…</p>}>
+            <AskPage onJournal={() => setModal("checkin")} />
+          </Suspense>
+        )}
+        {page === "Clinic" && (
+          <Suspense fallback={<p role="status">Opening your clinic…</p>}>
+            <ClinicPage
+              onOpen={(id, instructions) => {
+                openExerciseId(id);
+                setClinicInstructions(instructions);
+              }}
+              onImport={(plan) => {
+                saveRoutine({
+                  id: crypto.randomUUID(),
+                  name: plan.title,
+                  notes:
+                    plan.notes +
+                    "\n" +
+                    plan.items
+                      .map(
+                        (i) =>
+                          `${exerciseById.get(i.exerciseId)?.name}: ${i.note}${i.reps ? ` · ${i.reps} reps` : ""}`,
+                      )
+                      .join("\n"),
+                  exerciseIds: plan.items.map((i) => i.exerciseId),
+                  days: [],
+                  createdAt: new Date().toISOString(),
+                });
+                setToast(
+                  "Plan added to your routines. Safety holds remain in place.",
+                );
+              }}
+            />
+          </Suspense>
+        )}
         {page === "My recovery" && (
           <RecoverySummary
             injury={injury}
@@ -399,6 +450,17 @@ export function App() {
                 exercise={exercises[selected]}
                 safetyBlocked={safety.blocked}
                 safetyMessage={safety.message}
+                instructions={
+                  clinicInstructions ||
+                  (activeRun
+                    ? {
+                        note:
+                          routines.find((r) => r.id === activeRun.routineId)
+                            ?.notes || "",
+                        source: "Saved routine notes",
+                      }
+                    : undefined)
+                }
                 onSave={(reps, details) => {
                   setSessions((items) => [
                     ...items,
