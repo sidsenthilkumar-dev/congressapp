@@ -119,6 +119,20 @@ export function MovementSession({
   const [trackingSide, setTrackingSide] = useState<TrackingSide>("Automatic");
   const sideRef = useRef<TrackingSide>("Automatic");
   sideRef.current = trackingSide;
+  function changeTrackingSide(side: TrackingSide) {
+    setTrackingSide(side);
+    sideRef.current = side;
+    tracker.current.reset();
+    setTracking(null);
+    setCorrection(null);
+    setDismissed(null);
+    correctionSince.current = { issue: null, time: 0 };
+    if (
+      pacing.current.snapshot().mode === "active" ||
+      pacing.current.snapshot().mode === "paused"
+    )
+      syncPace(pacing.current.resume());
+  }
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [correction, setCorrection] = useState<Correction | null>(null);
   const correctionSince = useRef<{
@@ -315,7 +329,12 @@ export function MovementSession({
     }
     const nextPace = pacing.current.observe(
       resultState.angle,
-      resultState.ready && !resultState.correction,
+      // A visible pose can have a form warning or be calibrating without being lost.
+      resultState.visible &&
+        resultState.framed &&
+        resultState.viewGood &&
+        resultState.angle !== null &&
+        !dimRef.current,
       now,
     );
     syncPace(nextPace);
@@ -340,7 +359,7 @@ export function MovementSession({
     if (resultState.correction && now - correctionSince.current.time > 850)
       setCorrection(resultState.correction);
     else setCorrection(null);
-    if (p && ctx && canvas.current) {
+    if (p && p.length >= 33 && ctx && canvas.current) {
       const w = canvas.current.width,
         h = canvas.current.height;
       const ids = resultState.joints;
@@ -363,13 +382,15 @@ export function MovementSession({
                 ? [23, 11, 13, 15]
                 : [24, 12, 14, 16];
       ctx.beginPath();
-      main.forEach((id, j) =>
-        j
-          ? ctx.lineTo(p[id].x * w, p[id].y * h)
-          : ctx.moveTo(p[id].x * w, p[id].y * h),
-      );
+      main.forEach((id, j) => {
+        if (p[id] && [p[id].x, p[id].y].every(Number.isFinite)) {
+          if (j) ctx.lineTo(p[id].x * w, p[id].y * h);
+          else ctx.moveTo(p[id].x * w, p[id].y * h);
+        }
+      });
       ctx.stroke();
       ids.forEach((id) => {
+        if (!p[id] || ![p[id].x, p[id].y].every(Number.isFinite)) return;
         ctx.beginPath();
         ctx.arc(p[id].x * w, p[id].y * h, 6, 0, Math.PI * 2);
         ctx.fillStyle = resultState.ready ? "#d5f384" : "#f3d294";
@@ -591,8 +612,7 @@ export function MovementSession({
                       value={trackingSide}
                       disabled={running}
                       onChange={(e) => {
-                        setTrackingSide(e.target.value as TrackingSide);
-                        tracker.current.reset();
+                        changeTrackingSide(e.target.value as TrackingSide);
                       }}
                     >
                       {["Automatic", "Left", "Right"].map((x) => (
@@ -648,10 +668,26 @@ export function MovementSession({
                     {pace.mode !== "active"
                       ? "Camera preview on · Counting paused"
                       : protocol
-                        ? `Slow practice · ${practiceReps} / 2 · Motion estimates`
+                        ? `${practiceReps < 2 ? `Slow practice · ${practiceReps} / 2` : "Counting reps"} · ${protocol.view === "side" ? "Side view" : "Front view"}`
                         : "Camera mirror · Manual counting"}
                   </small>
                 </div>
+                {protocol && (
+                  <label className="camera-side-control">
+                    <span>Body side</span>
+                    <select
+                      aria-label="Camera tracked side"
+                      value={trackingSide}
+                      onChange={(event) =>
+                        changeTrackingSide(event.target.value as TrackingSide)
+                      }
+                    >
+                      <option value="Automatic">Auto</option>
+                      <option value="Left">Left</option>
+                      <option value="Right">Right</option>
+                    </select>
+                  </label>
+                )}
               </div>
               <video ref={video} playsInline muted />
               <div className="camera-frame" aria-hidden="true">

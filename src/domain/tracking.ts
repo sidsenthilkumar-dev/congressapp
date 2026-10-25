@@ -1,10 +1,5 @@
 export type Correction =
-  | "torso"
-  | "elbow"
-  | "visibility"
-  | "position"
-  | "tempo"
-  | "limb";
+  "torso" | "elbow" | "visibility" | "position" | "tempo" | "limb";
 export type Landmark = {
   x: number;
   y: number;
@@ -62,20 +57,30 @@ export class MotionTracker {
   private lastSide = "";
   private candidate: number | null = null;
   private lastRep = 0;
-  private lastNow = 0;
+  private lastNow: number | null = null;
   private phaseCandidate = "";
   private phaseSince = 0;
   private lastType: TrackedMovement | null = null;
   private tempoUntil = 0;
-  reset() {
-    this.locked = null;
-    this.candidate = null;
+  private restAngle: number | null = null;
+  private motionStarted: number | null = null;
+  private invalidateCycle() {
     this.stableSince = null;
     this.cycle = "idle";
     this.smooth = null;
-    this.started = 0;
-    this.lastNow = 0;
     this.phaseCandidate = "";
+    this.phaseSince = 0;
+    this.started = 0;
+    this.restAngle = null;
+    this.motionStarted = null;
+  }
+  reset() {
+    this.invalidateCycle();
+    this.locked = null;
+    this.candidate = null;
+    this.lastNow = null;
+    this.lastType = null;
+    this.lastSide = "";
     this.lastRep = 0;
     this.tempoUntil = 0;
   }
@@ -109,19 +114,18 @@ export class MotionTracker {
       aspect <= 0 ||
       aspect > 5
     ) {
-      this.reset();
+      this.invalidateCycle();
+      this.lastNow = null;
       return empty;
     }
-    if (this.lastType !== type) {
+    if (this.lastType !== type || this.lastSide !== side) {
       this.reset();
       this.lastType = type;
+      this.lastSide = side;
     }
-    const delta = this.lastNow ? now - this.lastNow : 100;
-    if (delta < 0 || (this.lastNow && delta > 600)) {
-      this.stableSince = null;
-      this.cycle = "idle";
-      this.smooth = null;
-    }
+    const delta = this.lastNow === null ? 100 : now - this.lastNow;
+    const frameGap = delta < 0 || delta > 1200;
+    if (frameGap) this.invalidateCycle();
     this.lastNow = now;
     const choices =
       type === "curl" || type === "wall-press"
@@ -143,31 +147,49 @@ export class MotionTracker {
                 [23, 11, 13],
                 [24, 12, 14],
               ];
-    const scores = choices.map((ids) =>
-      Math.min(...ids.map((i) => p[i].visibility ?? 0)),
+    const requiredFor = (index: number) =>
+      Array.from(
+        new Set([
+          ...choices[index],
+          index === 0 ? 11 : 12,
+          index === 0 ? 23 : 24,
+          ...(["shoulder", "flexion"].includes(type)
+            ? [index === 0 ? 15 : 16]
+            : []),
+          ...(["wall-press", "hip-abduction"].includes(type)
+            ? [index === 0 ? 27 : 28]
+            : []),
+        ]),
+      );
+    // Prefer a complete, framed chain. Once viable, keep it through small confidence jitter.
+    const scores = choices.map((_ids, index) =>
+      Math.min(
+        ...requiredFor(index).map((i) => {
+          const point = p[i];
+          return point &&
+            [point.x, point.y, point.visibility].every(Number.isFinite) &&
+            point.x > 0.035 &&
+            point.x < 0.965 &&
+            point.y > 0.035 &&
+            point.y < 0.965
+            ? (point.visibility ?? 0)
+            : 0;
+        }),
+      ),
     );
     let index =
       side === "Left"
         ? 0
         : side === "Right"
           ? 1
-          : (this.locked ?? (scores[0] >= scores[1] ? 0 : 1));
-    if (this.lastSide !== side) {
-      this.reset();
-      this.lastSide = side;
-      index =
-        side === "Left"
-          ? 0
-          : side === "Right"
-            ? 1
-            : scores[0] >= scores[1]
-              ? 0
-              : 1;
-    }
+          : (this.locked ??
+            (this.candidate !== null && scores[this.candidate] >= 0.7
+              ? this.candidate
+              : scores[0] >= scores[1]
+                ? 0
+                : 1));
     if (this.candidate !== index) {
-      this.stableSince = null;
-      this.cycle = "idle";
-      this.smooth = null;
+      this.invalidateCycle();
       this.candidate = index;
     }
     const ids = choices[index],
@@ -182,8 +204,14 @@ export class MotionTracker {
         ...(type === "hip-abduction" ? [left ? 27 : 28] : []),
       ]),
     );
-    const confidence = Math.min(...required.map((i) => p[i].visibility ?? 0));
+    const confidence = Math.min(
+      ...required.map((i) => {
+        const value = p[i]?.visibility;
+        return typeof value === "number" && Number.isFinite(value) ? value : 0;
+      }),
+    );
     const validPoint = (i: number) =>
+      !!p[i] &&
       [p[i].x, p[i].y, p[i].visibility].every(
         (v) => typeof v === "number" && Number.isFinite(v),
       ) &&
@@ -202,6 +230,10 @@ export class MotionTracker {
         (i) =>
           p[i].x > 0.035 && p[i].x < 0.965 && p[i].y > 0.035 && p[i].y < 0.965,
       );
+    if (![11, 12, left ? 23 : 24].every(validPoint)) {
+      this.invalidateCycle();
+      return { ...empty, side: left ? "Left" : "Right", joints: required };
+    }
     const shoulder = p[left ? 11 : 12],
       hip = p[left ? 23 : 24];
     const torsoHeight = Math.abs(hip.y - shoulder.y);
@@ -221,9 +253,7 @@ export class MotionTracker {
       joints: required,
     };
     if (!visible || !framed) {
-      this.stableSince = null;
-      this.cycle = "idle";
-      this.smooth = null;
+      this.invalidateCycle();
       return {
         ...base,
         correction: "visibility",
@@ -231,8 +261,7 @@ export class MotionTracker {
       };
     }
     if (!viewGood) {
-      this.stableSince = null;
-      this.cycle = "idle";
+      this.invalidateCycle();
       return {
         ...base,
         correction: "position",
@@ -244,8 +273,7 @@ export class MotionTracker {
     }
     const angle = jointAngle(p[ids[0]], p[ids[1]], p[ids[2]], aspect);
     if (angle === null) {
-      this.stableSince = null;
-      this.cycle = "idle";
+      this.invalidateCycle();
       return base;
     }
     const limbLength = (a: number, b: number) =>
@@ -254,9 +282,7 @@ export class MotionTracker {
       limbLength(ids[0], ids[1]) < 0.035 ||
       limbLength(ids[1], ids[2]) < 0.035
     ) {
-      this.stableSince = null;
-      this.cycle = "idle";
-      this.smooth = null;
+      this.invalidateCycle();
       return {
         ...base,
         correction: "visibility",
@@ -264,7 +290,7 @@ export class MotionTracker {
       };
     }
     // Time-based smoothing behaves consistently at different camera frame rates.
-    const alpha = 1 - Math.exp(-Math.max(1, Math.min(delta, 250)) / 180);
+    const alpha = 1 - Math.exp(-Math.max(1, Math.min(delta, 1200)) / 180);
     this.smooth =
       this.smooth === null
         ? angle
@@ -311,11 +337,11 @@ export class MotionTracker {
             ? "limb"
             : null;
     if (correction) {
-      this.stableSince = null;
-      this.cycle = "idle";
+      const observedAngle = this.smooth;
+      this.invalidateCycle();
       return {
         ...base,
-        angle: this.smooth,
+        angle: observedAngle,
         correction,
         cue:
           correction === "torso"
@@ -334,7 +360,9 @@ export class MotionTracker {
         angle: this.smooth,
         correction: null,
         progress,
-        cue: "Hold this position while the camera settles.",
+        cue: frameGap
+          ? "Camera updates are too slow. Hold still to recalibrate, or use manual counting."
+          : "Hold this position while the camera settles.",
       };
     if (side === "Automatic" && this.locked === null) this.locked = index;
     const rest =
@@ -361,15 +389,42 @@ export class MotionTracker {
       this.phaseSince = now;
     }
     const settled = now - this.phaseSince >= 100;
+    const direction = ["knee", "sit-stand", "shoulder", "flexion"].includes(
+      type,
+    )
+      ? 1
+      : -1;
+    // Start timing on departure, not on the last frame inside the broad rest band.
+    // Keep the return near the observed start; time spent waiting cannot qualify a fast rep.
+    if (this.cycle === "ready" && this.restAngle !== null) {
+      const excursion = (this.smooth - this.restAngle) * direction;
+      if (this.motionStarted === null && excursion >= 4)
+        this.motionStarted = now;
+      if (rest && excursion <= 3) {
+        this.motionStarted = null;
+        this.restAngle =
+          direction === 1
+            ? Math.min(this.restAngle, this.smooth)
+            : Math.max(this.restAngle, this.smooth);
+      }
+    }
     let rep = false;
     let feedback: Correction | null = null;
     if (this.cycle === "idle" && rest && settled) {
       this.cycle = "ready";
       this.started = now;
+      this.restAngle = this.smooth;
+      this.motionStarted = null;
     } else if (this.cycle === "ready" && extended && settled) {
       this.cycle = "out";
-    } else if (this.cycle === "out" && rest && settled) {
-      const duration = now - this.started;
+    } else if (
+      this.cycle === "out" &&
+      rest &&
+      settled &&
+      this.restAngle !== null &&
+      Math.abs(this.smooth - this.restAngle) <= 8
+    ) {
+      const duration = now - (this.motionStarted ?? this.started);
       if (
         duration >= minimumRepMs &&
         duration <= 30000 &&
@@ -380,9 +435,15 @@ export class MotionTracker {
       } else if (duration < minimumRepMs) feedback = "tempo";
       this.cycle = "ready";
       this.started = now;
+      this.restAngle = this.smooth;
+      this.motionStarted = null;
     }
-    if (this.cycle === "ready" && rest) this.started = now;
-    if (now - this.started > 30000 && this.cycle === "out") this.cycle = "idle";
+    if (this.motionStarted !== null && now - this.motionStarted > 30000) {
+      this.cycle = "idle";
+      this.motionStarted = null;
+      this.restAngle = null;
+      this.phaseCandidate = "";
+    }
     if (feedback === "tempo") this.tempoUntil = now + 1600;
     if (now < this.tempoUntil) feedback = "tempo";
     return {

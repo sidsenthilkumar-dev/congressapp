@@ -14,7 +14,8 @@
     "iphone": "node scripts/start-iphone.mjs",
     "release:web": "node scripts/publish-pages.mjs",
     "mobile:typecheck": "npm --prefix mobile run typecheck",
-    "mobile:bundle": "npm --prefix mobile run export:ios"
+    "mobile:bundle": "npm --prefix mobile run export:ios",
+    "deploy:vercel": "node scripts/deploy-vercel.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",
