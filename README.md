@@ -97,3 +97,5 @@ Supported cyclic camera exercises automatically pause counts and active time aft
 Additional pose-based checks identify unexpected elbow/knee bending in supported straight-limb guides and show a correction. These are deterministic checks on the existing pretrained pose model. No new model weights were trained, no clinic footage was reused, and real-person accuracy remains unvalidated. See [form validation and training status](docs/FORM-VALIDATION.md).
 
 See [public video dataset research](docs/VIDEO-DATASET-RESEARCH.md) and the [offline training toolkit](training/README.md) for verified dataset constraints, participant-separated evaluation, and the research-only candidate workflow. No new human-video model is deployed.
+
+For a one-Terminal Expo preview, run `npm run iphone`. Use `npm run iphone -- --https` to build and share a temporary public HTTPS static preview for camera access. Temporary tunnel URLs change on restart; use stable HTTPS hosting for persistent journal/routine data. The native weekly goal counts scheduled routine completions, with a reminder shortcut. See [submission status and remaining validation](docs/SUBMISSION-STATUS.md).

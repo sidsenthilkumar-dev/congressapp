@@ -83,3 +83,49 @@ test("native snapshot parser rejects inconsistent session totals", () => {
     }),
   ).toThrow();
 });
+
+test("native weekly goal updates after a real scheduled routine is saved and survives reload", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2026-10-25T12:00:00Z"));
+  await page.addInitScript(() => {
+    (window as any).__latest = null;
+    window.ReactNativeWebView = {
+      postMessage(raw: string) {
+        const message = JSON.parse(raw);
+        if (message.type === "RECOVERY_SNAPSHOT")
+          (window as any).__latest = message.snapshot;
+      },
+    };
+  });
+  await page.goto("/#routines");
+  await page
+    .getByRole("button", { name: "Create a routine", exact: true })
+    .click();
+  await page.getByLabel("Routine name").fill("Example Sunday plan");
+  await page.getByLabel("Sunday", { exact: true }).click();
+  await page.getByRole("checkbox", { name: /Seated hip march/ }).check();
+  await page.getByRole("button", { name: "Save routine", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__latest?.weeklyGoal))
+    .toEqual({ planned: 1, completed: 0, dueToday: 1, completedToday: 0 });
+  expect(
+    await page.evaluate(() => (window as any).__latest.routineDays),
+  ).toEqual([0]);
+  await page
+    .getByRole("button", { name: "Begin routine", exact: true })
+    .click();
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Start guided session" }).click();
+  await page.getByRole("button", { name: "Count a rep" }).click();
+  await page.getByRole("button", { name: "Finish & save" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as any).__latest?.weeklyGoal.completed),
+    )
+    .toBe(1);
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__latest?.weeklyGoal))
+    .toEqual({ planned: 1, completed: 1, dueToday: 1, completedToday: 1 });
+});

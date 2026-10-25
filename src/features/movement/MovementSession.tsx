@@ -19,6 +19,7 @@ import { RestTimer } from "./RestTimer";
 import { CorrectionPanel, CorrectionPreview } from "./MotionGuide";
 import { cameraProtocol, trackingCoverage } from "../../domain/coaching";
 import { CameraStage } from "./CameraStage";
+import { requestNativeCameraPermission } from "../../services/nativeBridge";
 import { SessionPacing, type PaceState } from "../../domain/sessionPacing";
 import {
   MotionTracker,
@@ -184,8 +185,12 @@ export function MovementSession({
     try {
       if (!navigator.mediaDevices?.getUserMedia)
         throw Error(
-          "Camera access requires a secure connection (HTTPS or localhost).",
+          window.ReactNativeWebView
+            ? "This phone is using an HTTP preview. Restart from your Mac with npm run iphone -- --https, or connect Rebound to a hosted HTTPS address, to enable camera coaching."
+            : "Camera access requires a secure connection (HTTPS or localhost).",
         );
+      await requestNativeCameraPermission();
+      if (!mounted.current || request !== cameraRequest.current) return;
       stream.current = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: { ideal: facing } },
         audio: false,

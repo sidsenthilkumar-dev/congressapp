@@ -84,3 +84,23 @@ npx expo run:ios --device
 Signing and device provisioning are required. Alternatively use the EAS development build profile after configuring your Apple credentials. Generating Xcode files and exporting JavaScript in Linux does not compile or validate Swift on a device.
 
 Physical-device checks: cold-launch the typing animation; repeat with Reduce Motion; verify the recovery counts match a newly logged session; search Coach and start a cleared routine; open/close the full-screen camera without a native toolbar covering it; background the app; add both widget sizes and Lock Screen variants; verify counts after reopening/logging; disable sharing and confirm widgets clear; change servers and confirm old counts disappear; cross midnight and daylight-saving changes; tap a widget to return to Recovery. Confirm existing recorder review, Clinic uploads, reminders, and sharing still work.
+
+## Live camera in Expo Go
+
+A plain `http://192.168…` preview cannot use WKWebView camera capture. With the latest web **and** mobile code, run this from the project root:
+
+```sh
+npm run iphone -- --https
+```
+
+This explicitly starts a **temporary public HTTPS preview** through Cloudflare. The launcher installs the Cloudflare helper if needed, builds the website, serves only the built static app on a loopback port, waits for the HTTPS tunnel, and supplies its address to Expo Go. It never tunnels the development/source server. Keep the Terminal open; Ctrl+C stops Expo, the static preview, and the tunnel. Internet access and the tunnel service must be available. No Cloudflare login is needed for a quick tunnel. The normal LAN startup remains available without a public tunnel.
+
+**Temporary links change on restart.** WebView journals and routines are stored per origin, so a new tunnel address opens a separate local recovery space. For persistent weekly tracking and a submission/demo link that survives restarts, connect the client to a stable HTTPS deployment instead. The preview is not permanent hosting or a signed iOS release.
+
+In the app, open a cleared exercise, enable the camera, and approve Camera access for Expo Go/Rebound. The native host requests camera permission before the WebView begins capture. Denial shows a Settings instruction and returns to the guide; it does not start a stream. iOS permission dialogs can make the app temporarily inactive: that no longer cancels startup. Actually backgrounding the app still stops camera capture. Native chrome and the status bar hide while the full-screen coach is active. Frames are processed locally; enabling camera coaching does not record a clip or upload video.
+
+The simulator/cloud browser cannot validate iPhone WKWebView permissions, GPU speed, or real-person rep/form accuracy. The release still needs a physical-iPhone check over HTTPS: allow and deny permission; front/back cameras; framing; slow practice; form-correction overlay; inactivity pause; set breaks; exit/background cleanup. Mirrors/manual counts remain available for movements outside the supported pose protocols.
+
+## Weekly goal
+
+A compact native progress bar above the recovery-focus card shows **completed scheduled routines / planned routines** for the current local Monday–Sunday week. Set the goal by choosing routine days in **Plan my week**. A routine earns credit once per scheduled date, only after its final saved movement completes the run; independent movement sessions, duplicate finishes, future-dated sessions, and unscheduled extra sets do not add credit. Dates before the routine was created are excluded. Unscheduled routines do not silently become a seven-day target. The current schedule determines the goal, so editing/deleting a routine can change the denominator. The bar is a plan-consistency measure, not a healing score. Rest days and safety holds have explicit messages, and a reminder shortcut opens the existing native opt-in scheduler. Routine days are suggested when creating a new native reminder schedule; an existing saved schedule takes precedence. Users still choose and confirm their desired notification days/time.

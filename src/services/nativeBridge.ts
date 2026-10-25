@@ -10,6 +10,41 @@ export function requestNativeRecording(exerciseId: string) {
   );
   return true;
 }
+/** Ask Expo Go for its host-app camera permission before WKWebView requests video. */
+export function requestNativeCameraPermission(): Promise<void> {
+  if (!window.ReactNativeWebView) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const requestId = crypto.randomUUID();
+    const cleanup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("rebound:native-camera-permission", receive);
+    };
+    const receive = (event: Event) => {
+      const response = (event as CustomEvent).detail;
+      if (response?.requestId !== requestId) return;
+      cleanup();
+      if (response.granted === true) resolve();
+      else
+        reject(
+          Error(
+            "Camera permission is off. Enable Camera for Expo Go (or Rebound) in iPhone Settings, then try again.",
+          ),
+        );
+    };
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(
+        Error(
+          "Camera permission timed out. Update both the iPhone client and the web app, then try again.",
+        ),
+      );
+    }, 30000);
+    window.addEventListener("rebound:native-camera-permission", receive);
+    window.ReactNativeWebView?.postMessage(
+      JSON.stringify({ type: "REQUEST_CAMERA_PERMISSION", requestId }),
+    );
+  });
+}
 export function requestNativeExport(
   content: string,
   name: string,

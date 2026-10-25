@@ -12,6 +12,13 @@ export type RecoverySnapshot = {
   safety: { blocked: boolean; title: string; message: string };
   stats: { total: number; today: number; week: number[]; pain: number | null };
   routines: NativeRoutine[];
+  routineDays?: number[];
+  weeklyGoal?: {
+    planned: number;
+    completed: number;
+    dueToday: number;
+    completedToday: number;
+  };
   updatedAt: string;
   modal: string;
 };
@@ -60,5 +67,25 @@ export function parseSnapshot(value: unknown): RecoverySnapshot {
       )
     )
       throw Error("Invalid routine snapshot.");
+  if (
+    s.routineDays !== undefined &&
+    (!Array.isArray(s.routineDays) ||
+      s.routineDays.length > 7 ||
+      s.routineDays.some((d) => !Number.isInteger(d) || d < 0 || d > 6))
+  )
+    throw Error("Invalid routine days.");
+  if (s.weeklyGoal !== undefined) {
+    const g = s.weeklyGoal;
+    if (
+      !g ||
+      typeof g !== "object" ||
+      ![g.planned, g.completed, g.dueToday, g.completedToday].every(count) ||
+      g.completed > g.planned ||
+      g.completedToday > g.dueToday ||
+      g.dueToday > g.planned ||
+      g.completedToday > g.completed
+    )
+      throw Error("Invalid weekly goal.");
+  }
   return s;
 }

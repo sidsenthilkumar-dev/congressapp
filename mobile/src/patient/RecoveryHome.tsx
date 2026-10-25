@@ -12,6 +12,7 @@ import type { RecoverySnapshot, NativeRoutine } from "./snapshot";
 import { Icon } from "./Icon";
 import { colors } from "./theme";
 import { useReducedMotion } from "./motion";
+import { WeeklyGoal } from "./WeeklyGoal";
 export function RecoveryHome({
   snapshot,
   onStart,
@@ -91,6 +92,7 @@ export function RecoveryHome({
             </Pressable>
           </View>
         </View>
+        <WeeklyGoal snapshot={snapshot} onPlan={onPlan} onRemind={onAlerts} />
         <Pressable
           accessibilityLabel="Review recovery focus"
           style={s.focus}

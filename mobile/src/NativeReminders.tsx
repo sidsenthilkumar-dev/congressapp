@@ -12,10 +12,16 @@ import {
   scheduleReminders,
   readReminders,
 } from "./notifications";
-export function NativeReminders({ onClose }: { onClose: () => void }) {
+export function NativeReminders({
+  onClose,
+  planDays = [],
+}: {
+  onClose: () => void;
+  planDays?: number[];
+}) {
   const [hour, setHour] = useState("18");
   const [minute, setMinute] = useState("00");
-  const [days, setDays] = useState([1, 3, 5]);
+  const [days, setDays] = useState(planDays);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let mounted = true;
@@ -66,6 +72,11 @@ export function NativeReminders({ onClose }: { onClose: () => void }) {
         iOS schedules these local reminders even when Rebound is closed. This
         schedule is separate from web reminders and does not track routine
         completion. Avoid duplicates by using one schedule.
+      </Text>
+      <Text style={s.label}>
+        {planDays.length
+          ? "Your routine days are suggested below. Choose your reminder time."
+          : "Choose the days and time that fit your cleared plan."}
       </Text>
       <Text style={s.label}>Local time · 24-hour clock</Text>
       <View style={s.time}>

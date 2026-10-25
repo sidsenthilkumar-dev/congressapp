@@ -8,6 +8,7 @@ import {
 import type { Entry, Routine, Session } from "../domain/types";
 import type { RecoveryProfile } from "../domain/recovery";
 import { exerciseById } from "../domain/exercises";
+import { weeklyGoal } from "../domain/weeklyGoal";
 type Host = {
   profile: RecoveryProfile;
   entries: Entry[];
@@ -40,6 +41,8 @@ export function useNativeHost(host: Host) {
             goal: h.profile.goal,
           },
           safety: h.safety,
+          weeklyGoal: weeklyGoal(h.routines, h.sessions, now),
+          routineDays: [...new Set(h.routines.flatMap((r) => r.days))].sort(),
           stats: {
             total: h.sessions.length,
             today: h.sessions.filter((s) => localDay(s.date) === localDay(now))
@@ -48,6 +51,9 @@ export function useNativeHost(host: Host) {
             pain: h.entries.at(-1)?.pain ?? null,
           },
           routines: dailyRoutines(h.routines, now)
+            .sort(
+              (a, b) => Number(b.days.length > 0) - Number(a.days.length > 0),
+            )
             .slice(0, 100)
             .map((r) => ({
               id: r.id,

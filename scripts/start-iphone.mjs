@@ -7,11 +7,11 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const mobile = fileURLToPath(new URL("../mobile/", import.meta.url));
 
-function runInstall(cwd) {
+function runNpm(cwd, args = ["ci"]) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       process.platform === "win32" ? "npm.cmd" : "npm",
-      ["ci"],
+      args,
       {
         cwd,
         stdio: "inherit",
@@ -71,20 +71,32 @@ async function main() {
       "This download is missing mobile/. Download the latest rebound-mvp branch into a new folder.",
     );
   const address = lanAddress();
+  const secure = process.argv.includes("--https");
   if (process.argv.includes("--check")) {
     console.log(
-      `iPhone launcher ready. Project: ${root}\nPrivate network: ${address}\nBoth package lockfiles found: ${existsSync(new URL("../package-lock.json", import.meta.url))}`,
+      `iPhone launcher ready. Project: ${root}\nPrivate network: ${address}\nHTTPS camera preview: ${secure ? "enabled (temporary public static preview)" : "off"}\nBoth package lockfiles found: ${existsSync(new URL("../package-lock.json", import.meta.url))}`,
     );
     return;
   }
   if (!process.argv.includes("--skip-install")) {
     console.log("Preparing the website and iPhone dependencies…");
-    await runInstall(root);
-    await runInstall(mobile);
+    await runNpm(root);
+    await runNpm(mobile);
+    if (secure)
+      await runNpm(
+        fileURLToPath(new URL("../tools/https-preview/", import.meta.url)),
+        ["ci", "--ignore-scripts"],
+      );
+  }
+  if (secure) {
+    console.log(
+      "Building a static preview. --https shares it through a temporary public Cloudflare URL until you stop this Terminal. Camera frames stay on the phone; this is not a permanent deployment.",
+    );
+    await runNpm(root, ["run", "build"]);
   }
   const webPort = await freePort(5173);
   const expoPort = await freePort(8081);
-  const website = `http://${address}:${webPort}`;
+  let website = `http://${address}:${webPort}`;
   const viteEntry = fileURLToPath(
     new URL("../node_modules/vite/bin/vite.js", import.meta.url),
   );
@@ -96,10 +108,20 @@ async function main() {
       "Dependencies are missing. Run npm run iphone without --skip-install.",
     );
   let expo;
+  let tunnel;
+  const abort = new AbortController();
   let webFailure;
   const web = spawn(
     process.execPath,
-    [viteEntry, "--host", "0.0.0.0", "--port", String(webPort), "--strictPort"],
+    [
+      viteEntry,
+      ...(secure ? ["preview"] : []),
+      "--host",
+      secure ? "127.0.0.1" : "0.0.0.0",
+      "--port",
+      String(webPort),
+      "--strictPort",
+    ],
     { cwd: root, stdio: ["ignore", "pipe", "pipe"] },
   );
   web.stdout.pipe(process.stdout);
@@ -117,6 +139,8 @@ async function main() {
   let stopping = false;
   const stop = () => {
     stopping = true;
+    abort.abort();
+    tunnel?.stop();
     expo?.kill("SIGINT");
     web.kill("SIGTERM");
   };
@@ -142,8 +166,39 @@ async function main() {
       throw new Error(
         "The website did not start. Check the server output above.",
       );
+    if (secure) {
+      const { openSecurePreview } = await import("./secure-preview.mjs");
+      tunnel = await openSecurePreview(`http://127.0.0.1:${webPort}`, {
+        signal: abort.signal,
+        onExit: () => {
+          webFailure = new Error(
+            "The HTTPS tunnel disconnected. Restart npm run iphone -- --https.",
+          );
+          expo?.kill("SIGTERM");
+        },
+      });
+      website = tunnel.url;
+      let reachable = false;
+      for (let attempt = 0; attempt < 12 && !abort.signal.aborted; attempt++) {
+        try {
+          const response = await fetch(website, {
+            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(2000)]),
+          });
+          if (response.ok) {
+            reachable = true;
+            break;
+          }
+        } catch {}
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      if (!reachable)
+        throw new Error(
+          "The HTTPS preview is not reachable yet. Restart the launcher or use a hosted HTTPS address.",
+        );
+    }
+    if (webFailure) throw webFailure;
     console.log(
-      `\nWebsite ready: ${website}\nScan the Expo QR code below with your iPhone Camera.\nThe iPhone app will use this website address automatically.\nKeep this Terminal open. Press Ctrl+C to stop both servers.\nLAN preview supports the new screens; camera coaching needs HTTPS.\n`,
+      `\nWebsite ready: ${website}\nScan the Expo QR code below with your iPhone Camera.\nThe iPhone app will use this website address automatically.\nKeep this Terminal open. Press Ctrl+C to stop both servers.\n${secure ? "HTTPS is ready for camera permission and on-device coaching." : "For live camera coaching, restart with npm run iphone -- --https."}\n`,
     );
     const code = await new Promise((resolve, reject) => {
       expo = spawn(
@@ -179,6 +234,7 @@ async function main() {
     process.removeListener("SIGINT", stop);
     process.removeListener("SIGTERM", stop);
     expo?.kill("SIGTERM");
+    tunnel?.stop();
     web.kill("SIGTERM");
   }
 }

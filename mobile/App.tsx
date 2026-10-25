@@ -17,6 +17,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import * as SecureStore from "expo-secure-store";
 import * as Notifications from "expo-notifications";
+import { useCameraPermissions } from "expo-camera";
 import { NativeRecorder } from "./src/NativeRecorder";
 import { NativeReminders } from "./src/NativeReminders";
 import { validateAppUrl } from "./src/config";
@@ -35,6 +36,7 @@ import {
   widgetAvailable,
 } from "./src/patient/widgets";
 function Rebound() {
+  const [, requestCameraPermission] = useCameraPermissions();
   const [launch, setLaunch] = useState(true);
   const [recoveryRequest, setRecoveryRequest] = useState(0);
   const [snapshot, setSnapshot] = useState<RecoverySnapshot | null>(null);
@@ -122,7 +124,7 @@ function Rebound() {
       setForeground(state === "active");
       if (state === "active")
         web.current?.injectJavaScript(nativeActionScript({ type: "sync" }));
-      if (state !== "active")
+      if (state === "background")
         web.current?.injectJavaScript(
           "window.dispatchEvent(new Event('rebound:native-background'));true;",
         );
@@ -171,6 +173,16 @@ function Rebound() {
     try {
       if (new URL(source).origin !== appUrl || raw.length > 1100000) return;
       const data = JSON.parse(raw);
+      if (
+        data.type === "REQUEST_CAMERA_PERMISSION" &&
+        typeof data.requestId === "string" &&
+        /^[a-f0-9-]{36}$/.test(data.requestId)
+      ) {
+        const permission = await requestCameraPermission();
+        web.current?.injectJavaScript(
+          `window.dispatchEvent(new CustomEvent('rebound:native-camera-permission',{detail:${JSON.stringify({ requestId: data.requestId, granted: permission.granted })}}));true;`,
+        );
+      }
       if (
         data.type === "RECORD_CLIP" &&
         typeof data.exerciseId === "string" &&
@@ -300,6 +312,8 @@ function Rebound() {
                 source={{ uri: appUrl }}
                 style={s.web}
                 injectedJavaScript={nativePresentationScript}
+                contentInsetAdjustmentBehavior="never"
+                automaticallyAdjustContentInsets={false}
                 javaScriptEnabled
                 domStorageEnabled
                 allowsInlineMediaPlayback
@@ -438,7 +452,10 @@ function Rebound() {
         onRequestClose={() => setReminders(false)}
       >
         <SafeAreaView style={s.root}>
-          <NativeReminders onClose={() => setReminders(false)} />
+          <NativeReminders
+            planDays={snapshot?.routineDays}
+            onClose={() => setReminders(false)}
+          />
         </SafeAreaView>
       </Modal>
     </SafeAreaView>

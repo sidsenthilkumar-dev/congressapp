@@ -55,3 +55,7 @@ python3 -m unittest discover -s training/tests -v
 ```
 
 These tests use synthetic numeric fixtures to verify grouping, rights gates, preprocessing, serialization, and evaluation accounting. They are software checks and must never be presented as accuracy measured on people or real exercise videos.
+
+## Exercise and equipment inventory
+
+Run `node training/catalog-readiness.mjs` from the repository root to regenerate `docs/TRACKING-READINESS.json`. It lists every guide, its current experimental or mirror/manual mode, observable motion, equipment blind spots, and missing exercise-specific human validation. This command audits coverage; it does not train a model. Band curl, band row, and assisted dowel movements need their own permission-cleared, independently labeled evaluation footage. Sharing an angular-motion rule with an unbanded exercise does not validate equipment use or resistance.
