@@ -1,7 +1,7 @@
 import { localDay } from "./dailyPlan";
 import type { Routine, Session } from "./types";
 
-/** One completed routine per planned local date. Extra sets never earn extra credit. */
+// Count each scheduled routine once per local day.
 export function weeklyGoal(
   routines: Routine[],
   sessions: Session[],
