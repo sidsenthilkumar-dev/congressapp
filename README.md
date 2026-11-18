@@ -1,58 +1,58 @@
-# Rebound
+# rebound
 
-**Congressional App Challenge project** · React, TypeScript, Vite, MediaPipe Pose, Expo
+**congressional app challenge project** · react, typescript, vite, mediapipe pose, expo
 
-I built Rebound to make recovery routines easier to follow and track. It combines daily check-ins, guided movements, and experimental camera-based rep counting in a web app, with an Expo iPhone client. The goal is to give someone a clearer picture of what they've done between appointments, without presenting the app as a replacement for medical care.
+i built rebound to make recovery routines easier to follow and track. it combines daily check-ins, guided movements, and experimental camera-based rep counting in a web app, with an expo iphone client. the goal is to give someone a clearer picture of what they've done between appointments, without presenting the app as a replacement for medical care.
 
-**[Try the web app](https://congress-two.vercel.app/#today)**
+**[try the web app](https://congress-two.vercel.app/#today)**
 
-This repository contains the web app and an Expo iPhone client. The hosted web app is deployed from the separate `congress` repository, so this repository and the live version may differ.
+this repository contains the web app and an expo iphone client. the hosted web app is deployed from the separate `congress` repository, so this repository and the live version may differ.
 
-## What it does
+## what it does
 
-- Records daily discomfort, energy, and notes.
-- Lets users edit their recovery profile and browse movement guides by body area.
-- Provides illustrated exercise instructions, timers, manual rep counting, and routines.
-- Uses MediaPipe Pose for experimental camera-based rep estimates and basic form cues on supported movements.
-- Checks camera framing and pauses tracking when movement or usable joint tracking is lost.
-- Keeps a progress history and exports journal records and visit summaries.
-- Includes optional clinic sharing and AI explanations that need separate server configuration.
+- records daily discomfort, energy, and notes.
+- lets users edit their recovery profile and browse movement guides by body area.
+- provides illustrated exercise instructions, timers, manual rep counting, and routines.
+- uses mediapipe pose for experimental camera-based rep estimates and basic form cues on supported movements.
+- checks camera framing and pauses tracking when movement or usable joint tracking is lost.
+- keeps a progress history and exports journal records and visit summaries.
+- includes optional clinic sharing and ai explanations that need separate server configuration.
 
-Most journal and session data stays in the browser's localStorage. Clearing browser data removes those records, so export anything you want to keep. Browser storage is not encrypted; avoid storing sensitive information on a shared device.
+most journal and session data stays in the browser's localstorage. clearing browser data removes those records, so export anything you want to keep. browser storage is not encrypted; avoid storing sensitive information on a shared device.
 
-## Run locally
+## run locally
 
-Use Node.js 20.19+ or 22.12+.
+use node.js 20.19+ or 22.12+.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open the local address printed by Vite. The install script copies the MediaPipe runtime and pose models into `public/pose`, so camera tracking does not need a separate model API key.
+open the local address printed by vite. the install script copies the mediapipe runtime and pose models into `public/pose`, so camera tracking does not need a separate model api key.
 
 ```sh
 npm run build
 npm run preview
 ```
 
-The production build is written to `dist`. A deployed camera session needs HTTPS, camera permission, a supported browser, and enough room and light to see the working joints.
+the production build is written to `dist`. a deployed camera session needs https, camera permission, a supported browser, and enough room and light to see the working joints.
 
-## Project structure
+## project structure
 
-The web app uses React, TypeScript, and Vite. MediaPipe supplies the pretrained pose model; the app applies movement rules to its joint estimates. No new pose-model weights were trained for this project.
+the web app uses react, typescript, and vite. mediapipe supplies the pretrained pose model; the app applies movement rules to its joint estimates. no new pose-model weights were trained for this project.
 
 - `src/` — web pages, shared components, recovery state, and camera processing
-- `mobile/` — Expo iPhone client
+- `mobile/` — expo iphone client
 - `public/pose/` — runtime and model assets prepared during installation
-- `supabase/` — optional clinic services and AI explanation function
+- `supabase/` — optional clinic services and ai explanation function
 - `tests/` — browser and clinic policy checks
 - `docs/` — architecture, sources, setup, and validation notes
 - `training/` — research-only offline training toolkit
 
-See [architecture](docs/ARCHITECTURE.md) for the application structure and state ownership.
+see [architecture](docs/ARCHITECTURE.md) for the application structure and state ownership.
 
-## Checks
+## checks
 
 ```sh
 npx playwright install chromium
@@ -62,30 +62,30 @@ npm run mobile:typecheck
 npm run mobile:bundle
 ```
 
-The browser tests use port 5180 by default; set `REBOUND_TEST_PORT` to change it. The synthetic-camera check may need `CHROMIUM_PATH` set to an installed Chromium executable. The mobile bundle command creates a JavaScript export, not a signed iOS application or a physical-device test.
+the browser tests use port 5180 by default; set `REBOUND_TEST_PORT` to change it. the synthetic-camera check may need `CHROMIUM_PATH` set to an installed chromium executable. the mobile bundle command creates a javascript export, not a signed ios application or a physical-device test.
 
-## Limits and sources
+## limits and sources
 
-Rebound is a prototype for general movement guidance and personal records. It does not diagnose injuries, prescribe treatment, or establish whether someone's exercise form is clinically safe. Follow a qualified clinician's instructions after an injury, and stop exercising if symptoms worsen.
+rebound is a prototype for general movement guidance and personal records. it does not diagnose injuries, prescribe treatment, or establish whether someone's exercise form is clinically safe. follow a qualified clinician's instructions after an injury, and stop exercising if symptoms worsen.
 
-Camera joint estimates and rep counts can be wrong. Real-person tracking accuracy and clinical benefit have not been validated. Some guides require individual clinician instructions or further reference review. Symptom checks can place a safety hold on generic sessions; they do not provide a diagnosis.
+camera joint estimates and rep counts can be wrong. real-person tracking accuracy and clinical benefit have not been validated. some guides require individual clinician instructions or further reference review. symptom checks can place a safety hold on generic sessions; they do not provide a diagnosis.
 
-The default check-in is local and rule-based. Optional AI explanations require sign-in, explicit opt-in, and a configured server function. Clinic exchange requires separately configured Supabase services. Browser reminders depend on the app remaining open; imported calendar schedules have their own alert settings.
+the default check-in is local and rule-based. optional ai explanations require sign-in, explicit opt-in, and a configured server function. clinic exchange requires separately configured supabase services. browser reminders depend on the app remaining open; imported calendar schedules have their own alert settings.
 
-Detailed references and limitations:
+detailed references and limitations:
 
-- [Research and publishing notes](docs/RESEARCH-AND-PUBLISHING.md)
-- [MVP research](docs/MVP-RESEARCH.md)
-- [Tracking coverage](docs/TRACKING-COVERAGE.md)
-- [Form validation and training status](docs/FORM-VALIDATION.md)
-- [Public video dataset research](docs/VIDEO-DATASET-RESEARCH.md)
-- [Submission status and remaining validation](docs/SUBMISSION-STATUS.md)
+- [research and publishing notes](docs/RESEARCH-AND-PUBLISHING.md)
+- [mvp research](docs/MVP-RESEARCH.md)
+- [tracking coverage](docs/TRACKING-COVERAGE.md)
+- [form validation and training status](docs/FORM-VALIDATION.md)
+- [public video dataset research](docs/VIDEO-DATASET-RESEARCH.md)
+- [submission status and remaining validation](docs/SUBMISSION-STATUS.md)
 
-## Mobile and deployment
+## mobile and deployment
 
-- [iPhone testing](docs/IPHONE-TESTING.md)
-- [Clinic setup](docs/CLINIC-SETUP.md)
-- [Website release guide](docs/WEBSITE-RELEASE.md)
-- [Vercel deployment guide](docs/VERCEL-DEPLOYMENT.md)
+- [iphone testing](docs/IPHONE-TESTING.md)
+- [clinic setup](docs/CLINIC-SETUP.md)
+- [website release guide](docs/WEBSITE-RELEASE.md)
+- [vercel deployment guide](docs/VERCEL-DEPLOYMENT.md)
 
-The iPhone client needs a reachable web deployment for shared workflows, with HTTPS for camera coaching. There is no signed App Store build or offline-use guarantee.
+the iphone client needs a reachable web deployment for shared workflows, with https for camera coaching. there is no signed app store build or offline-use guarantee.
