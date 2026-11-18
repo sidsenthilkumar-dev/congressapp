@@ -1,6 +1,8 @@
 # Rebound
 
-Rebound is a recovery journal and movement guide for athletes and other people working through recovery. It brings check-ins, exercise instructions, routines, and camera-based movement tracking into one app.
+**Congressional App Challenge project** · React, TypeScript, Vite, MediaPipe Pose, Expo
+
+I built Rebound to make recovery routines easier to follow and track. It combines daily check-ins, guided movements, and experimental camera-based rep counting in a web app, with an Expo iPhone client. The goal is to give someone a clearer picture of what they've done between appointments, without presenting the app as a replacement for medical care.
 
 **[Try the web app](https://congress-two.vercel.app/#today)**
 
